@@ -51,33 +51,27 @@ public class StaffFireInput : MonoBehaviour
         }
     }
 
-    void FireStaff()
+void FireStaff()
+{
+    StaffController currentStaff = weaponManager.GetCurrentStaff();
+
+    if (currentStaff != null && currentStaff.projectilePrefab != null && currentStaff.ammo > 0 && firePoint != null)
     {
-        StaffController currentStaff = weaponManager.GetCurrentStaff();
+        GameObject projectile = Instantiate(currentStaff.projectilePrefab, firePoint.position, firePoint.rotation);
+        Rigidbody rb = projectile.GetComponent<Rigidbody>();
 
-        if (currentStaff != null && currentStaff.projectilePrefab != null && currentStaff.ammo > 0 && firePoint != null)
+        if (rb != null)
         {
-            GameObject projectile = Instantiate(currentStaff.projectilePrefab, firePoint.position, firePoint.rotation);
-            Rigidbody rb = projectile.GetComponent<Rigidbody>();
+            // Reset any inherited velocity
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
 
-            if (rb != null)
-            {
-                if (currentStaff.isStraightShot)
-                {
-                    rb.linearVelocity = firePoint.forward * currentStaff.fireForce;
-                }
-                else if (currentStaff.isLobShot)
-                {
-                    Vector3 lobDirection = (firePoint.forward + firePoint.up).normalized;
-                    rb.linearVelocity = lobDirection * currentStaff.fireForce + Vector3.up * currentStaff.lobArcHeight;
-                }
-                else
-                {
-                    Debug.LogWarning("No firing style enabled on current staff: " + currentStaff.gameObject.name);
-                }
-            }
-
-            currentStaff.ammo--;
+            // Apply forward force plus optional upward force
+            Vector3 shootDirection = (firePoint.forward * currentStaff.fireForce) + (Vector3.up * currentStaff.upwardForce);
+            rb.linearVelocity = shootDirection;
         }
+
+        currentStaff.ammo--;
     }
+}
 }

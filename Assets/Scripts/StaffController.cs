@@ -6,15 +6,11 @@ public class StaffController : MonoBehaviour
     [Header("Firing Settings")]
     public GameObject projectilePrefab;
     public Transform firePoint;
-    public float fireForce = 20f;
+    public float fireForce = 20f;  // How fast the projectile moves forward
+    public float upwardForce = 0f;    // Optional upward boost for lobbed shots
     public int ammo = 30;
 
     private int maxAmmo;
-
-    [Header("Firing Modes")]
-    public bool isStraightShot = true;
-    public bool isLobShot = false;
-    public float lobArcHeight = 5f;
 
     [Header("UI")]
     public TMP_Text manaText; // Assign in inspector
@@ -49,19 +45,15 @@ public class StaffController : MonoBehaviour
 
         if (rb != null)
         {
-            if (isStraightShot)
-            {
-                rb.linearVelocity = firePoint.forward * fireForce;
-            }
-            else if (isLobShot)
-            {
-                Vector3 lobDirection = (firePoint.forward + firePoint.up).normalized;
-                rb.linearVelocity = lobDirection * fireForce + Vector3.up * lobArcHeight;
-            }
-            else
-            {
-                Debug.LogWarning("No firing style enabled on " + gameObject.name);
-            }
+            // Always use camera forward for direction
+            Vector3 cameraForward = Camera.main.transform.forward;
+            Vector3 cameraUp = Camera.main.transform.up;
+
+            // Combine forward and upward force
+            Vector3 shootDirection = (cameraForward * fireForce) + (cameraUp * upwardForce);
+
+            // Apply as linear velocity
+            rb.linearVelocity = shootDirection;
         }
 
         ammo--;
