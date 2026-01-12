@@ -10,6 +10,10 @@ public class PlayerController : MonoBehaviour
     public float gravity = -20f;
     public float jumpHeight = 1.5f;
 
+    [Header("Movement Smoothing")]
+    public float acceleration = 12f;
+    public float deceleration = 10f;
+
     [Header("Look Settings")]
     public Transform cameraTransform;
     public float mouseSensitivity = 2f;
@@ -32,7 +36,9 @@ public class PlayerController : MonoBehaviour
     private int currentPoints;
 
     private CharacterController controller;
-    private Vector3 velocity;
+    private Vector3 velocity;              // vertical velocity
+    private Vector3 horizontalVelocity;    // smoothed horizontal movement
+    private Vector2 input;
     private float verticalLookRotation = 0f;
 
     private float bobTimer = 0f;
@@ -41,6 +47,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         controller = GetComponent<CharacterController>();
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
@@ -55,12 +62,27 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        ReadInput();
         HandleMouseLook();
         HandleMovement();
         HandleHeadBobbing();
         UpdateUI();
     }
 
+    // --------------------
+    // INPUT
+    // --------------------
+    void ReadInput()
+    {
+        input = new Vector2(
+            Input.GetAxisRaw("Horizontal"),
+            Input.GetAxisRaw("Vertical")
+        );
+    }
+
+    // --------------------
+    // LOOK
+    // --------------------
     void HandleMouseLook()
     {
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
@@ -73,19 +95,32 @@ public class PlayerController : MonoBehaviour
         transform.Rotate(Vector3.up * mouseX);
     }
 
+    // --------------------
+    // MOVEMENT (FIXED)
+    // --------------------
     void HandleMovement()
     {
-        float inputX = Input.GetAxis("Horizontal");
-        float inputZ = Input.GetAxis("Vertical");
+        bool isGrounded = controller.isGrounded;
 
-        float currentSpeed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : moveSpeed;
+        float targetSpeed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : moveSpeed;
 
-        Vector3 move = transform.right * inputX + transform.forward * inputZ;
-        move = move.normalized * currentSpeed;
+        Vector3 moveDirection =
+            (transform.right * input.x + transform.forward * input.y).normalized;
 
-        if (controller.isGrounded)
+        Vector3 targetHorizontalVelocity = moveDirection * targetSpeed;
+
+        float rate = moveDirection.magnitude > 0.1f ? acceleration : deceleration;
+
+        horizontalVelocity = Vector3.Lerp(
+            horizontalVelocity,
+            targetHorizontalVelocity,
+            Time.deltaTime * rate
+        );
+
+        if (isGrounded)
         {
-            velocity.y = -2f;
+            if (velocity.y < 0f)
+                velocity.y = -2f;
 
             if (Input.GetButtonDown("Jump"))
             {
@@ -97,14 +132,21 @@ public class PlayerController : MonoBehaviour
             velocity.y += gravity * Time.deltaTime;
         }
 
-        controller.Move((move + velocity) * Time.deltaTime);
+        Vector3 finalMove =
+            horizontalVelocity +
+            Vector3.up * velocity.y;
+
+        controller.Move(finalMove * Time.deltaTime);
     }
 
+    // --------------------
+    // HEAD BOB
+    // --------------------
     void HandleHeadBobbing()
     {
         if (cameraTransform == null) return;
 
-        bool isMoving = controller.velocity.magnitude > 0.1f && controller.isGrounded;
+        bool isMoving = horizontalVelocity.magnitude > 0.1f && controller.isGrounded;
 
         if (isMoving)
         {
@@ -112,16 +154,23 @@ public class PlayerController : MonoBehaviour
             bobTimer += Time.deltaTime * bobFrequency * speedMultiplier;
             float bobOffset = Mathf.Sin(bobTimer) * bobAmplitude * speedMultiplier;
 
-            Vector3 newCamPos = cameraInitialPos + new Vector3(0f, bobOffset, 0f);
-            cameraTransform.localPosition = newCamPos;
+            cameraTransform.localPosition =
+                cameraInitialPos + new Vector3(0f, bobOffset, 0f);
         }
         else
         {
-            cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition, cameraInitialPos, Time.deltaTime * 10f);
+            cameraTransform.localPosition = Vector3.Lerp(
+                cameraTransform.localPosition,
+                cameraInitialPos,
+                Time.deltaTime * 10f
+            );
             bobTimer = 0f;
         }
     }
 
+    // --------------------
+    // UI / STATS
+    // --------------------
     void UpdateUI()
     {
         if (healthText != null)
@@ -142,9 +191,9 @@ public class PlayerController : MonoBehaviour
         currentHealth -= amount;
         currentHealth = Mathf.Max(currentHealth, 0);
         UpdateUI();
+
         if (currentHealth <= 0)
         {
-            // Handle player death (expand later)
             Debug.Log("Player has died.");
         }
     }
@@ -160,13 +209,6 @@ public class PlayerController : MonoBehaviour
         return false;
     }
 
-    public int GetCurrentPoints()
-    {
-        return currentPoints;
-    }
-
-    public int GetCurrentHealth()
-    {
-        return currentHealth;
-    }
+    public int GetCurrentPoints() => currentPoints;
+    public int GetCurrentHealth() => currentHealth;
 }
