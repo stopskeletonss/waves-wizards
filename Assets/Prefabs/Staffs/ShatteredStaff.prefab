@@ -109,7 +109,7 @@ MonoBehaviour:
   firePoint: {fileID: 0}
   fireForce: 20
   upwardForce: 0
-  ammo: 30
+  ammo: 27
   manaText: {fileID: 0}
 --- !u!1 &4759750530538131981
 GameObject:
