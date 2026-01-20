@@ -96,7 +96,7 @@ public class PlayerController : MonoBehaviour
     }
 
     // --------------------
-    // MOVEMENT (FIXED)
+    // MOVEMENT
     // --------------------
     void HandleMovement()
     {

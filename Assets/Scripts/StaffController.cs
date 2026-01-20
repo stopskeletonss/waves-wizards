@@ -6,53 +6,78 @@ public class StaffController : MonoBehaviour
     [Header("Firing Settings")]
     public GameObject projectilePrefab;
     public Transform firePoint;
-    public float fireForce = 20f;  // How fast the projectile moves forward
-    public float upwardForce = 0f;    // Optional upward boost for lobbed shots
+    public float fireForce = 20f;
+    public float upwardForce = 0f;
     public int ammo = 30;
 
     private int maxAmmo;
 
     [Header("UI")]
-    public TMP_Text manaText; // Assign in inspector
+    public TMP_Text manaText;
+
+    [Header("Follow Lag Settings")]
+    public float positionLag = 12f;
+    public float rotationLag = 12f;
+
+    private Transform holdPoint;
+    private Vector3 velocity;
+    private Vector3 lastHoldPosition;
 
     void Start()
     {
         maxAmmo = ammo;
 
-        // Look for a sibling named "StaffHoldPoint" if firePoint not assigned
-        if (firePoint == null && transform.parent != null)
+        // Cache fire point BEFORE unparenting
+        if (firePoint == null)
         {
-            Transform sibling = transform.parent.Find("StaffHoldPoint");
-            if (sibling != null)
-            {
-                firePoint = sibling;
-            }
-            else
-            {
-                Debug.LogWarning("StaffHoldPoint not found as a sibling of " + gameObject.name);
-            }
+            firePoint = transform.Find("StaffFirePoint");
+        }
+
+        if (transform.parent != null)
+        {
+            holdPoint = transform.parent;
+            lastHoldPosition = holdPoint.position;
+
+            transform.SetParent(null); // unparent AFTER caching firePoint
         }
 
         UpdateManaUI();
     }
 
+    void LateUpdate()
+    {
+        if (holdPoint == null) return;
+
+        Vector3 holdDelta = holdPoint.position - lastHoldPosition;
+        lastHoldPosition = holdPoint.position;
+
+        Vector3 targetPosition = holdPoint.position + (-holdDelta);
+
+        float posT = 1f - Mathf.Exp(-positionLag * Time.deltaTime);
+
+        transform.position = Vector3.Lerp(
+            transform.position,
+            targetPosition,
+            posT
+        );
+
+        transform.rotation = holdPoint.rotation;
+    }
+
     public void Fire()
     {
-        if (ammo <= 0 || firePoint == null || projectilePrefab == null) return;
+        if (ammo <= 0 || firePoint == null || projectilePrefab == null || holdPoint == null) return;
 
         GameObject projectile = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
         Rigidbody rb = projectile.GetComponent<Rigidbody>();
 
         if (rb != null)
         {
-            // Always use camera forward for direction
-            Vector3 cameraForward = Camera.main.transform.forward;
-            Vector3 cameraUp = Camera.main.transform.up;
+            Vector3 forward = holdPoint.forward;
+            Vector3 up = holdPoint.up;
 
-            // Combine forward and upward force
-            Vector3 shootDirection = (cameraForward * fireForce) + (cameraUp * upwardForce);
+            Vector3 shootDirection = (forward * fireForce) + (up * upwardForce);
 
-            // Apply as linear velocity
             rb.linearVelocity = shootDirection;
         }
 

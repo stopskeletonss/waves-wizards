@@ -111,6 +111,8 @@ MonoBehaviour:
   upwardForce: 0
   ammo: 27
   manaText: {fileID: 0}
+  positionLag: 100
+  rotationLag: 20
 --- !u!1 &4759750530538131981
 GameObject:
   m_ObjectHideFlags: 0

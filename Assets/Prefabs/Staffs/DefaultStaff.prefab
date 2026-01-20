@@ -64,6 +64,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -85,9 +87,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!114 &-7918874253698999502
 MonoBehaviour:
@@ -104,11 +108,11 @@ MonoBehaviour:
   projectilePrefab: {fileID: 1190583387234657133, guid: 03059442fc44907468c66c5056750a04, type: 3}
   firePoint: {fileID: 0}
   fireForce: 20
+  upwardForce: 0
   ammo: 30
-  isStraightShot: 1
-  isLobShot: 0
-  lobArcHeight: 5
   manaText: {fileID: 0}
+  positionLag: 100
+  rotationLag: 20
 --- !u!1 &4759750530538131981
 GameObject:
   m_ObjectHideFlags: 0
