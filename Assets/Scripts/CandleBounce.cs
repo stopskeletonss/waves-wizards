@@ -18,7 +18,7 @@ public class CandleBounce : MonoBehaviour
     [Tooltip("Duration of the fade-in")]
     public float fadeInDuration = 1f; // Duration of the fade-in
     [Tooltip("Target range after fade-in")]
-    public float targetRange = 14f; // Final range after fade-in
+    public float targetRange = 30f; // Final range after fade-in
 
     private Light[] lights;
     private new Renderer[] renderer;
@@ -97,7 +97,7 @@ public class CandleBounce : MonoBehaviour
 
             // Adjust light range based on intensity, doubling the overall range
             float minRange = 5f; // Minimum light range
-            float maxRange = 10f; // Maximum light range
+            float maxRange = 30f; // Maximum light range
             float doubledRange = Mathf.Lerp(minRange, maxRange, value) * 2; // Double the overall range
             lights[i].range = Mathf.Clamp(lights[i].range, 0, doubledRange);
 
