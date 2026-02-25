@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class MainMenuController : MonoBehaviour
 {
@@ -7,8 +8,8 @@ public class MainMenuController : MonoBehaviour
     public Transform tutorialAnchor;
     public Transform creditsAnchor;
     public Transform settingsAnchor;
-    public Transform mainAnchor;
     public Transform quitAnchor;
+    public Transform mainAnchor;
 
     [Header("Movement Settings")]
     public float moveSpeed = 3f;
@@ -16,21 +17,37 @@ public class MainMenuController : MonoBehaviour
     public float arrivalThreshold = 0.05f;
 
     [Header("Position Sway")]
-    public float positionAmount = 0f;      // default requested
-    public float positionSpeed = 0f;       // default requested
+    public float positionAmount = 0f;
+    public float positionSpeed = 0f;
 
     [Header("Rotation Sway")]
-    public float rotationAmount = 0.2f;    // default requested
-    public float rotationSpeed = 2.5f;     // default requested
+    public float rotationAmount = 0.2f;
+    public float rotationSpeed = 2.5f;
+
+    [Header("Main Menu Parent")]
+    public Transform menuParent;
+    public Vector3 onScreenPosition;
+    public Vector3 offScreenPosition;
+    public float menuMoveSpeed = 4f;
+    public float introDelay = 2f;
+
+    [Header("Submenu Pages")]
+    public GameObject settingsPage;
+    public GameObject creditsPage;
+    public GameObject quitPage;
 
     private Transform currentTarget;
     private bool isMoving;
+    private bool inSubMenu;
 
     private Vector3 basePosition;
     private Quaternion baseRotation;
 
+    private Vector3 menuTargetPos;
+
     void Start()
     {
+        // Camera start
         if (mainAnchor != null)
         {
             basePosition = mainAnchor.position;
@@ -38,12 +55,30 @@ public class MainMenuController : MonoBehaviour
             transform.position = basePosition;
             transform.rotation = baseRotation;
         }
+
+        // Menu starts offscreen
+        if (menuParent != null)
+        {
+            menuParent.localPosition = offScreenPosition;
+            menuTargetPos = offScreenPosition;
+        }
+
+        DisableAllSubmenus();
+        StartCoroutine(IntroRoutine());
+    }
+
+    IEnumerator IntroRoutine()
+    {
+        yield return new WaitForSeconds(introDelay);
+        MoveMenuOnScreen();
     }
 
     void Update()
     {
         HandleMovement();
         ApplySway();
+        HandleMenuMovement();
+        HandleEscape();
     }
 
     // =========================
@@ -74,7 +109,7 @@ public class MainMenuController : MonoBehaviour
     }
 
     // =========================
-    // Sway Logic (Overlay)
+    // Sway
     // =========================
 
     void ApplySway()
@@ -92,7 +127,7 @@ public class MainMenuController : MonoBehaviour
         if (rotationAmount > 0f)
         {
             float rotX = Mathf.Sin(Time.time * rotationSpeed) * rotationAmount;
-            float rotY = Mathf.Cos(Time.time * rotationSpeed * 0.7f) * rotationAmount;
+            float rotY = Mathf.Cos(Time.time * rotationSpeed * rotationSpeed * 0.7f) * rotationAmount;
             swayRot = Quaternion.Euler(rotX, rotY, 0f);
         }
 
@@ -101,21 +136,82 @@ public class MainMenuController : MonoBehaviour
     }
 
     // =========================
+    // Menu Movement
+    // =========================
+
+    void HandleMenuMovement()
+    {
+        if (!menuParent) return;
+
+        menuParent.localPosition = Vector3.Lerp(
+            menuParent.localPosition,
+            menuTargetPos,
+            Time.deltaTime * menuMoveSpeed
+        );
+    }
+
+    void MoveMenuOnScreen()
+    {
+        menuTargetPos = onScreenPosition;
+    }
+
+    void MoveMenuOffScreen()
+    {
+        menuTargetPos = offScreenPosition;
+    }
+
+    // =========================
     // Button Functions
     // =========================
 
-    public void PlayGame() => MoveCamera(playAnchor);
-    public void Tutorial() => MoveCamera(tutorialAnchor);
-    public void Credits() => MoveCamera(creditsAnchor);
-    public void Settings() => MoveCamera(settingsAnchor);
-    public void BackToMain() => MoveCamera(mainAnchor);
-    public void QuitGame() => MoveCamera(quitAnchor);
+    public void PlayGame() => EnterSubMenu(playAnchor, null);
+    public void Tutorial() => EnterSubMenu(tutorialAnchor, null);
+    public void Credits() => EnterSubMenu(creditsAnchor, creditsPage);
+    public void Settings() => EnterSubMenu(settingsAnchor, settingsPage);
+    public void QuitGame() => EnterSubMenu(quitAnchor, quitPage);
+
+    public void BackToMain()
+    {
+        inSubMenu = false;
+        MoveCamera(mainAnchor);
+        MoveMenuOnScreen();
+        DisableAllSubmenus();
+    }
+
+    void EnterSubMenu(Transform anchor, GameObject page)
+    {
+        inSubMenu = true;
+        MoveCamera(anchor);
+        MoveMenuOffScreen();
+
+        if (page != null)
+            page.SetActive(true);
+    }
 
     void MoveCamera(Transform target)
     {
-        if (isMoving || target == null) return;
+        if (target == null) return;
 
         currentTarget = target;
         isMoving = true;
+    }
+
+    // =========================
+    // Escape Handling
+    // =========================
+
+    void HandleEscape()
+    {
+        if (inSubMenu && Input.GetKeyDown(KeyCode.Escape))
+        {
+            BackToMain();
+        }
+    }
+
+    void DisableAllSubmenus()
+    {
+        if (settingsPage) settingsPage.SetActive(false);
+        if (creditsPage) creditsPage.SetActive(false);
+        if (quitPage) quitPage.SetActive(false);
     }
 }
