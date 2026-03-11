@@ -36,6 +36,11 @@ public class MainMenuController : MonoBehaviour
     public GameObject creditsPage;
     public GameObject quitPage;
 
+    [Header("Menu Sounds")]
+    public AudioSource audioSource;        // single AudioSource for one-shot sounds
+    public AudioClip submenuOpenSound;     // plays when opening a submenu
+    public AudioClip backToMainSound;      // plays when returning to main menu
+
     private Transform currentTarget;
     private bool inSubMenu;
 
@@ -206,6 +211,10 @@ public class MainMenuController : MonoBehaviour
         MoveCamera(mainAnchor);
         MoveMenuOnScreen();
         DisableAllSubmenus();
+
+        // Play back-to-main sound
+        if (audioSource != null && backToMainSound != null)
+            audioSource.PlayOneShot(backToMainSound);
     }
 
     void EnterSubMenu(Transform anchor, GameObject page)
@@ -216,6 +225,10 @@ public class MainMenuController : MonoBehaviour
 
         if (page != null)
             page.SetActive(true);
+
+        // Play submenu open sound
+        if (audioSource != null && submenuOpenSound != null)
+            audioSource.PlayOneShot(submenuOpenSound);
     }
 
     // =========================

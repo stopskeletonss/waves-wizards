@@ -8,6 +8,10 @@ public class MainMenuButtonEffect : MonoBehaviour, IPointerEnterHandler, IPointe
     public float hoverScale = 1.2f;
     public float scaleSpeed = 10f;
 
+    [Header("Audio")]
+    public AudioClip hoverSound;
+    public AudioSource audioSource;
+
     private TMP_Text buttonText;
     private Transform selectNotif;
 
@@ -18,12 +22,10 @@ public class MainMenuButtonEffect : MonoBehaviour, IPointerEnterHandler, IPointe
 
     void Awake()
     {
-        // Find TMP text
         buttonText = GetComponentInChildren<TMP_Text>();
         if (buttonText != null)
             textNormalScale = buttonText.transform.localScale;
 
-        // Find SelectNotif child
         selectNotif = transform.Find("SelectNotif");
         if (selectNotif != null)
         {
@@ -34,9 +36,18 @@ public class MainMenuButtonEffect : MonoBehaviour, IPointerEnterHandler, IPointe
         targetScale = Vector3.one;
     }
 
+    void Start()
+    {
+        if (audioSource != null && hoverSound != null)
+        {
+            audioSource.clip = hoverSound;
+            audioSource.Play();
+            audioSource.Stop();
+        }
+    }
+
     void Update()
     {
-        // Smooth text scaling
         if (buttonText != null)
         {
             buttonText.transform.localScale = Vector3.Lerp(
@@ -46,7 +57,6 @@ public class MainMenuButtonEffect : MonoBehaviour, IPointerEnterHandler, IPointe
             );
         }
 
-        // Smooth SelectNotif scaling
         if (selectNotif != null)
         {
             selectNotif.localScale = Vector3.Lerp(
@@ -59,10 +69,14 @@ public class MainMenuButtonEffect : MonoBehaviour, IPointerEnterHandler, IPointe
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        Debug.Log("Hover detected");
         targetScale = Vector3.one * hoverScale;
 
         if (selectNotif != null)
             selectNotif.gameObject.SetActive(true);
+
+        if (audioSource != null && hoverSound != null)
+            audioSource.PlayOneShot(hoverSound);
     }
 
     public void OnPointerExit(PointerEventData eventData)
