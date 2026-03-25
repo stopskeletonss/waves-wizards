@@ -37,9 +37,12 @@ public class MainMenuController : MonoBehaviour
     public GameObject quitPage;
 
     [Header("Menu Sounds")]
-    public AudioSource audioSource;        // single AudioSource for one-shot sounds
-    public AudioClip submenuOpenSound;     // plays when opening a submenu
-    public AudioClip backToMainSound;      // plays when returning to main menu
+    public AudioSource audioSource;
+    public AudioClip submenuOpenSound;
+    public AudioClip backToMainSound;
+
+    [Header("Book Animation")]
+    public Animator bookAnimator;
 
     private Transform currentTarget;
     private bool inSubMenu;
@@ -52,7 +55,6 @@ public class MainMenuController : MonoBehaviour
 
     void Start()
     {
-        // Camera initial position
         if (mainAnchor != null)
         {
             basePosition = mainAnchor.position;
@@ -61,7 +63,6 @@ public class MainMenuController : MonoBehaviour
             transform.rotation = baseRotation;
         }
 
-        // Cache canvas
         if (menuParent != null)
         {
             parentCanvas = menuParent.GetComponentInParent<Canvas>();
@@ -85,10 +86,6 @@ public class MainMenuController : MonoBehaviour
         HandleMenuMovement();
         HandleEscape();
     }
-
-    // =========================
-    // Camera Movement
-    // =========================
 
     void HandleMovement()
     {
@@ -118,10 +115,6 @@ public class MainMenuController : MonoBehaviour
         currentTarget = target;
     }
 
-    // =========================
-    // Sway Overlay
-    // =========================
-
     void ApplySway()
     {
         Vector3 swayPos = Vector3.zero;
@@ -144,10 +137,6 @@ public class MainMenuController : MonoBehaviour
         transform.position = basePosition + swayPos;
         transform.rotation = baseRotation * swayRot;
     }
-
-    // =========================
-    // UI Movement (World Canvas)
-    // =========================
 
     void HandleMenuMovement()
     {
@@ -199,8 +188,22 @@ public class MainMenuController : MonoBehaviour
     // Button Functions
     // =========================
 
-    public void PlayGame() => EnterSubMenu(playAnchor, null);
-    public void Tutorial() => EnterSubMenu(tutorialAnchor, null);
+    public void PlayGame()
+    {
+        EnterSubMenu(playAnchor, null);
+
+        if (bookAnimator != null)
+            bookAnimator.SetTrigger("Opening");
+    }
+
+    public void Tutorial()
+    {
+        EnterSubMenu(tutorialAnchor, null);
+
+        if (bookAnimator != null)
+            bookAnimator.SetTrigger("Opening");
+    }
+
     public void Credits() => EnterSubMenu(creditsAnchor, creditsPage);
     public void Settings() => EnterSubMenu(settingsAnchor, settingsPage);
     public void QuitGame() => EnterSubMenu(quitAnchor, quitPage);
@@ -212,7 +215,9 @@ public class MainMenuController : MonoBehaviour
         MoveMenuOnScreen();
         DisableAllSubmenus();
 
-        // Play back-to-main sound
+        if (bookAnimator != null)
+            bookAnimator.SetTrigger("Closing");
+
         if (audioSource != null && backToMainSound != null)
             audioSource.PlayOneShot(backToMainSound);
     }
@@ -226,14 +231,9 @@ public class MainMenuController : MonoBehaviour
         if (page != null)
             page.SetActive(true);
 
-        // Play submenu open sound
         if (audioSource != null && submenuOpenSound != null)
             audioSource.PlayOneShot(submenuOpenSound);
     }
-
-    // =========================
-    // Escape Handling
-    // =========================
 
     void HandleEscape()
     {
