@@ -192,8 +192,11 @@ public class MainMenuController : MonoBehaviour
     {
         EnterSubMenu(playAnchor, null);
 
-        if (bookAnimator != null)
-            bookAnimator.SetTrigger("Opening");
+        //if (bookAnimator != null)
+        //{
+        //    bookAnimator.ResetTrigger("Closing");
+        //    bookAnimator.SetTrigger("Opening");
+        //}
     }
 
     public void Tutorial()
@@ -201,7 +204,10 @@ public class MainMenuController : MonoBehaviour
         EnterSubMenu(tutorialAnchor, null);
 
         if (bookAnimator != null)
+        {
+            bookAnimator.ResetTrigger("Closing");
             bookAnimator.SetTrigger("Opening");
+        }
     }
 
     public void Credits() => EnterSubMenu(creditsAnchor, creditsPage);
@@ -216,7 +222,10 @@ public class MainMenuController : MonoBehaviour
         DisableAllSubmenus();
 
         if (bookAnimator != null)
-            bookAnimator.SetTrigger("Closing");
+        {
+                bookAnimator.ResetTrigger("Opening");
+                bookAnimator.SetTrigger("Closing");
+        }
 
         if (audioSource != null && backToMainSound != null)
             audioSource.PlayOneShot(backToMainSound);
