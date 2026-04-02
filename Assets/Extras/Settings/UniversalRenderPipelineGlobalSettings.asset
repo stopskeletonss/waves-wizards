@@ -65,8 +65,8 @@ MonoBehaviour:
       - rid: 7663100419235119170
       - rid: 7663100419235119171
       - rid: 7663100419235119172
-      - rid: 566399594685792256
-      - rid: 566399594685792257
+      - rid: 6699507340061179904
+      - rid: 6699507340061179905
     m_RuntimeSettings:
       m_List: []
   m_AssetVersion: 10
@@ -99,18 +99,6 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 566399594685792256
-      type: {class: URPTerrainShaderSetting, ns: UnityEngine.Rendering.Universal, asm: Unity.RenderPipelines.Universal.Runtime}
-      data:
-        m_Version: 0
-        m_IncludeTerrainShaders: 1
-    - rid: 566399594685792257
-      type: {class: UniversalRenderPipelineRuntimeTerrainShaders, ns: UnityEngine.Rendering.Universal, asm: Unity.RenderPipelines.Universal.Runtime}
-      data:
-        m_Version: 0
-        m_TerrainDetailLit: {fileID: 4800000, guid: f6783ab646d374f94b199774402a5144, type: 3}
-        m_TerrainDetailGrassBillboard: {fileID: 4800000, guid: 29868e73b638e48ca99a19ea58c48d90, type: 3}
-        m_TerrainDetailGrass: {fileID: 4800000, guid: e507fdfead5ca47e8b9a768b51c291a1, type: 3}
     - rid: 3821508817763172352
       type: {class: UniversalRenderPipelineEditorAssets, ns: UnityEngine.Rendering.Universal, asm: Unity.RenderPipelines.Universal.Runtime}
       data:
@@ -153,6 +141,18 @@ MonoBehaviour:
       data:
         m_Version: 1
         m_UseBicubicLightmapSampling: 0
+    - rid: 6699507340061179904
+      type: {class: URPTerrainShaderSetting, ns: UnityEngine.Rendering.Universal, asm: Unity.RenderPipelines.Universal.Runtime}
+      data:
+        m_Version: 0
+        m_IncludeTerrainShaders: 1
+    - rid: 6699507340061179905
+      type: {class: UniversalRenderPipelineRuntimeTerrainShaders, ns: UnityEngine.Rendering.Universal, asm: Unity.RenderPipelines.Universal.Runtime}
+      data:
+        m_Version: 0
+        m_TerrainDetailLit: {fileID: 4800000, guid: f6783ab646d374f94b199774402a5144, type: 3}
+        m_TerrainDetailGrassBillboard: {fileID: 4800000, guid: 29868e73b638e48ca99a19ea58c48d90, type: 3}
+        m_TerrainDetailGrass: {fileID: 4800000, guid: e507fdfead5ca47e8b9a768b51c291a1, type: 3}
     - rid: 6852985685364965376
       type: {class: URPShaderStrippingSetting, ns: UnityEngine.Rendering.Universal, asm: Unity.RenderPipelines.Universal.Runtime}
       data:
