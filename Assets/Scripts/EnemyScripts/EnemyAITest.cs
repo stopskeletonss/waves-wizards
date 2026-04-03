@@ -25,6 +25,8 @@ public class EnemyAITest : MonoBehaviour
         playerDistance = Vector3.Distance(Skeleton.transform.position, Target.position);
         if (playerDistance < AttackDistance)
         {
+            //Stops the skeleton when in range
+            Skeleton.destination = Skeleton.transform.position;
             //Attack Logic here when close enough
             Debug.Log("Attack!");
         }
