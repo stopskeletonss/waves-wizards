@@ -16,6 +16,14 @@ public class EnemyAITest : MonoBehaviour
     void Start()
     {
         Skeleton = GetComponent<NavMeshAgent>();
+        if (Target == null)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                Target = player.transform;
+            }
+        }
     }
 
     // Update is called once per frame
