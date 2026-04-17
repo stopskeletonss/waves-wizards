@@ -53,6 +53,13 @@ public class MainMenuController : MonoBehaviour
     private Vector2 menuTargetPos;
     private Canvas parentCanvas;
 
+    public Material defaultMaterial;
+    public Material joiningMaterial;
+    public GameObject changingPage;
+    public GameObject lobbyCanvas;
+    public GameObject mainbookCanvas;
+    public int pagesDeep;
+
     void Start()
     {
         if (mainAnchor != null)
@@ -85,6 +92,7 @@ public class MainMenuController : MonoBehaviour
         ApplySway();
         HandleMenuMovement();
         HandleEscape();
+        Debug.Log(pagesDeep);
     }
 
     void HandleMovement()
@@ -191,11 +199,11 @@ public class MainMenuController : MonoBehaviour
     public void PlayGame()
     {
         EnterSubMenu(playAnchor, null);
-
+        mainbookCanvas.SetActive(true);
         //if (bookAnimator != null)
         //{
         //    bookAnimator.ResetTrigger("Closing");
-        //    bookAnimator.SetTrigger("Opening");
+        //    bookAnimator.Play("Opening", 0, 0f);
         //}
     }
 
@@ -206,7 +214,7 @@ public class MainMenuController : MonoBehaviour
         if (bookAnimator != null)
         {
             bookAnimator.ResetTrigger("Closing");
-            bookAnimator.SetTrigger("Opening");
+            bookAnimator.Play("Opening", 0, 0f);
         }
     }
 
@@ -223,12 +231,67 @@ public class MainMenuController : MonoBehaviour
 
         if (bookAnimator != null)
         {
-                bookAnimator.ResetTrigger("Opening");
-                bookAnimator.SetTrigger("Closing");
+            bookAnimator.ResetTrigger("Opening");
+            bookAnimator.SetTrigger("Closing");
         }
 
         if (audioSource != null && backToMainSound != null)
             audioSource.PlayOneShot(backToMainSound);
+    }
+
+    public void HostGame()
+    {
+        if (bookAnimator != null)
+        {
+            bookAnimator.ResetTrigger("Closing");
+            bookAnimator.Play("Opening", 0, 0f);
+        }
+        changingPage.GetComponent<Renderer>().material = defaultMaterial;
+        pagesDeep = 1;
+    }
+
+    public void JoinGame()
+    {
+        if (bookAnimator != null)
+        {
+            bookAnimator.ResetTrigger("Closing");
+            bookAnimator.Play("Opening", 0, 0f);
+        }
+        changingPage.GetComponent<Renderer>().material = joiningMaterial;
+        pagesDeep = 1;
+    }
+
+    public void LocalGame()
+    {
+        if (bookAnimator != null)
+        {
+            bookAnimator.ResetTrigger("Closing");
+            bookAnimator.Play("Opening", 0, 0f);
+        }
+        changingPage.GetComponent<Renderer>().material = defaultMaterial;
+        pagesDeep = 1;
+    }
+
+    public void ReturnToMainBook()
+    {
+        if (bookAnimator != null)
+        {
+            bookAnimator.ResetTrigger("Opening");
+            bookAnimator.SetTrigger("Closing");
+        }
+    }
+
+    public void MapSelected()
+    {
+        lobbyCanvas.SetActive(true);
+        pagesDeep = 2;
+    }
+
+    public void LobbyFound()
+    {
+        lobbyCanvas.SetActive(true);
+        pagesDeep = 2;
+
     }
 
     void EnterSubMenu(Transform anchor, GameObject page)
@@ -248,7 +311,25 @@ public class MainMenuController : MonoBehaviour
     {
         if (inSubMenu && Input.GetKeyDown(KeyCode.Escape))
         {
-            BackToMain();
+            if (pagesDeep == 0)
+            {
+                BackToMain();
+                mainbookCanvas.SetActive(false);
+            }
+            else if (pagesDeep == 1)
+            {
+                ReturnToMainBook();
+                pagesDeep = 0;
+            }
+            else if (pagesDeep == 2)
+            {
+                lobbyCanvas.SetActive(false);
+                pagesDeep = 1;
+            }
+            else
+            {
+                Debug.Log("Where even are you bro");
+            }
         }
     }
 
