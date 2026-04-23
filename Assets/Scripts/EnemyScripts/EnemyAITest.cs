@@ -1,7 +1,7 @@
 using UnityEngine;
-using UnityEngine.AI;
+using Unity.Netcode;
 
-public class EnemyAITest : MonoBehaviour
+public class EnemyAITest : NetworkBehaviour
 {
     //Player Transform
     public Transform Target;
@@ -9,16 +9,17 @@ public class EnemyAITest : MonoBehaviour
     public float AttackDistance;
     
     //NavAgent for this object
-    private NavMeshAgent Skeleton;
+    private UnityEngine.AI.NavMeshAgent Skeleton;
     //Distance to player
     private float playerDistance;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public override void OnNetworkSpawn()
     {
-        Skeleton = GetComponent<NavMeshAgent>();
+        base.OnNetworkSpawn();
+        Skeleton = GetComponent<UnityEngine.AI.NavMeshAgent>();
         if (Target == null)
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            GameObject player = GameObject.FindWithTag("Player");
             if (player != null)
             {
                 Target = player.transform;
