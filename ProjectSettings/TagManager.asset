@@ -6,6 +6,7 @@ TagManager:
   tags:
   - BuyTMP
   - ManaTMP
+  - Enemy
   layers:
   - Default
   - TransparentFX

@@ -7,16 +7,23 @@ public class EnemyAITest : NetworkBehaviour
     public Transform Target;
     //Distance to damage a Player
     public float AttackDistance;
-    
+    //Enemy's max HP
+    public float maxHP;
+    //Enemy's Current HP
+    public float currentHP;
     //NavAgent for this object
     private UnityEngine.AI.NavMeshAgent Skeleton;
     //Distance to player
     private float playerDistance;
+    //reference to Enemy Health Bar
+    [SerializeField]
+    private TestHealthBar healthBar;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
         Skeleton = GetComponent<UnityEngine.AI.NavMeshAgent>();
+        healthBar.UpdateHealthBar(maxHP, currentHP);
         if (Target == null)
         {
             GameObject player = GameObject.FindWithTag("Player");
