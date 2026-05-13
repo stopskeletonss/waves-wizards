@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2729126888435986289
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6186882274280219239}
+  m_Layer: 0
+  m_Name: StaffHoldPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6186882274280219239
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2729126888435986289}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.25041726, y: 0.52800304, z: -0.1664787, w: -0.79422224}
+  m_LocalPosition: {x: -1.607, y: 0.007, z: -1.157}
+  m_LocalScale: {x: 1.7999997, y: 1.7999998, z: 1.7999998}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5931502481658326846}
+  m_LocalEulerAnglesHint: {x: 35, y: 0, z: 0}
 --- !u!1 &3764860641872594870
 GameObject:
   m_ObjectHideFlags: 0
@@ -137,6 +168,37 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1 &3875742225684942979
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5553738496185666359}
+  m_Layer: 0
+  m_Name: StaffFIrePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5553738496185666359
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3875742225684942979}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.25041726, y: 0.52800304, z: -0.1664787, w: -0.79422224}
+  m_LocalPosition: {x: -2.153, y: 1.166, z: -0.36300004}
+  m_LocalScale: {x: 1.7999997, y: 1.7999998, z: 1.7999998}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5931502481658326846}
+  m_LocalEulerAnglesHint: {x: 35, y: 0, z: 0}
 --- !u!1 &5077501906197933637
 GameObject:
   m_ObjectHideFlags: 0
@@ -153,9 +215,11 @@ GameObject:
   - component: {fileID: 2801778639777030006}
   - component: {fileID: 6839279800142080884}
   - component: {fileID: 6334252631369611472}
+  - component: {fileID: 7500191867532654904}
+  - component: {fileID: 4637484350776043283}
   m_Layer: 0
-  m_Name: Player
-  m_TagString: Untagged
+  m_Name: Player1
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -173,6 +237,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 6186882274280219239}
+  - {fileID: 5553738496185666359}
   - {fileID: 7668953515380499954}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -381,6 +447,34 @@ MonoBehaviour:
     m_Bits: 4294967295
   coyoteTime: 0.1
   jumpBufferTime: 0.1
-  maxSlopeAngle: 60
-  dragOnGround: 6
-  dragInAir: 0
+--- !u!114 &7500191867532654904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5077501906197933637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6305a38bfb0a00840a7ecb91bea6bc76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  weaponManager: {fileID: 4637484350776043283}
+  firePoint: {fileID: 5553738496185666359}
+--- !u!114 &4637484350776043283
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5077501906197933637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5e10e553ee2db4488be19afcfe141e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  starterStaffPrefab: {fileID: 1487227951881924249, guid: 478f96425caa0584c849a50bb08652e5, type: 3}
+  weaponHoldPoint: {fileID: 6186882274280219239}
+  staffSlots:
+  - {fileID: 0}
+  - {fileID: 0}
