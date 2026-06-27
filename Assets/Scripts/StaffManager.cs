@@ -5,11 +5,10 @@ public class StaffManager : MonoBehaviour
 {
     [Header("Staff Settings")]
     public GameObject starterStaffPrefab;
-    public Transform weaponHoldPoint; // Assign this in inspector
+    public Transform weaponHoldPoint;
     public GameObject[] staffSlots = new GameObject[2];
     private int currentSlot = 0;
 
-    // Event to notify when a staff is equipped
     public event Action<GameObject> onStaffEquipped;
 
     void Start()
@@ -36,6 +35,17 @@ public class StaffManager : MonoBehaviour
             StaffController staff = GetCurrentStaff();
             if (staff != null)
                 staff.Fire();
+        }
+
+        // Reload current staff with R
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            StaffController staff = GetCurrentStaff();
+            if (staff != null)
+            {
+                staff.RefillAmmo();
+                Debug.Log("Reloaded staff: " + staff.gameObject.name);
+            }
         }
 
         // Switch staff using 1 and 2
