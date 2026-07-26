@@ -1,15 +1,18 @@
-using System.Diagnostics;
+using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerStatus : MonoBehaviour
+//Not sure if this is neededbut we "probably" won't need multiple status' on a player game object
+[DisallowMultipleComponent]
+
+public class PlayerStatus : NetworkBehaviour
 {
     [SerializeField] private float currentHP;
     [SerializeField] private float maxHP;
     //probably other values (ammo, buffs, debuffs)
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public override void OnNetworkSpawn()
     {
-        currentHealth = maxHP;
+        base.OnNetworkSpawn();
+        currentHP = maxHP;
     }
 
     // Update is called once per frame
@@ -20,6 +23,8 @@ public class PlayerStatus : MonoBehaviour
 
     public void takeDamage(float damageAmount)
     {
+        Debug.Log("Applying Damage!");
+        //applies damage from currentHP
         currentHP -= damageAmount;
         Debug.Log("HP: " + currentHP);
     }

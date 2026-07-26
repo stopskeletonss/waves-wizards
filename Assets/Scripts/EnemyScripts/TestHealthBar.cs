@@ -4,7 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 //I think it would be valuable to have the health bar UI rotating to the players camera...
-//...just not sure how to do that when accounting for multiple cameras (since this is multiplayer) 
+//...just not sure how to do that when accounting for multiple cameras (since this is multiplayer)
+//also not sure if this needs to be a network behaviour I assume so since almost everything will need to be
 public class TestHealthBar : MonoBehaviour
 {
     [SerializeField]

@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using System.Collections;
 
 public class EnemyAITest : NetworkBehaviour
 {
@@ -24,11 +25,14 @@ public class EnemyAITest : NetworkBehaviour
     [SerializeField]
     private TestHealthBar healthBar;
     private bool inRange = false;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    public bool applyDamage = false;
+
+    Animator animator;
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
         Skeleton = GetComponent<UnityEngine.AI.NavMeshAgent>();
+        animator = GetComponent<Animator>();
 
         currentHP = maxHP;
 
@@ -53,10 +57,12 @@ public class EnemyAITest : NetworkBehaviour
         {
             inRange = true;
             //Stops the skeleton when in range
+            //below this might be a cleaner code option not sure yet
+            //agent.SetDestination(destination)
             Skeleton.destination = Skeleton.transform.position;
             //Attack Logic here when close enough
             Debug.Log("Attack!");
-            StartAttack(AttackDelay);
+            StartAttack();
         }
         else
         {
@@ -80,18 +86,27 @@ public class EnemyAITest : NetworkBehaviour
             Die();
         }
     }
-    void StartAttack(float delay)
+    void StartAttack()
     {
-        PlayerStatus player = Target.parent.GameObject.GetComponent<PlayerStatus>;
-        StartCoroutine(AttackAction(player, delay));
+        Debug.Log("Starting Attack");
+        //storing victim's playerstatus to access when adjusting damage (playerStatus tracks HP, Mana/Ammo, etc.)
+        PlayerStatus player = Target.GetComponent<PlayerStatus>();
+        AttackAction(player);
     }
-    IEnumerator AttackAction(GameObject player,float delay)
-    {        
-        //waits delay value's seconds before attacking
-        yield return new WaitForSeconds(delay);
-        if(inRange == true)
+    void AttackAction(PlayerStatus playerStatus)
+    {
+        //ensures the animation doesn't interrupt itself
+        if(!animator.GetCurrentAnimatorStateInfo(0).IsName("EnemyAttack"))
         {
-            player.takeDamage(AttackDamage);
+            //Debug.Log("Winding Up!");
+            animator.SetTrigger("Attack");  
+        }
+
+        if(inRange == true && applyDamage == true)
+        {
+            applyDamage = false;
+            //Debug.Log("In Range!");
+            playerStatus.takeDamage(AttackDamage);
         }
     }
 
