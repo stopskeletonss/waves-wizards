@@ -23,7 +23,11 @@ public class EnemyAITest : NetworkBehaviour
     {
         base.OnNetworkSpawn();
         Skeleton = GetComponent<UnityEngine.AI.NavMeshAgent>();
+
+        currentHP = maxHP;
+
         healthBar.UpdateHealthBar(maxHP, currentHP);
+
         if (Target == null)
         {
             GameObject player = GameObject.FindWithTag("Player");
@@ -52,5 +56,24 @@ public class EnemyAITest : NetworkBehaviour
             Skeleton.destination = Target.position;
             
         }
+    }
+
+    [ServerRpc]
+    public void TakeDamageServerRpc(int damageAmount)
+    {
+        Debug.Log("Damage Take RPC called");
+        currentHP -= damageAmount;
+        Debug.Log("Enemy health: " + currentHP);
+        healthBar.UpdateHealthBar(maxHP, currentHP);
+
+        if (currentHP <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        GetComponent<NetworkObject>().Despawn();
     }
 }

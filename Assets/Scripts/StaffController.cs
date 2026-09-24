@@ -5,140 +5,146 @@ public class StaffController : MonoBehaviour
 {
     [Header("Firing Settings")]
     public GameObject projectilePrefab;
-    public Transform firePoint;
-    public float fireForce = 20f;
-    public float upwardForce = 0f;
+    public Transform firePoint;                // The muzzle / spawn point on the staff
+    public float fireForce = 20f;              // Speed applied along aim direction
+    public float upwardForce = 0f;             // Optional additional upward component (relative to camera)
     public int ammo = 30;
 
     private int maxAmmo;
-
-    public bool singleShot;
-    public bool constantShot;
-    public bool beamShot;
 
     [Header("UI")]
     public TMP_Text manaText;
 
     [Header("Follow Lag Settings")]
-    public float positionLag = 12f;
-    public float rotationLag = 12f;
+    public float positionLag = 12f;            // Larger = snappier; used with exponential smoothing
+    public float rotationLag = 12f;            // Larger = snappier
+    public float aimMaxDistance = 1000f;
+    public LayerMask aimLayerMask = Physics.DefaultRaycastLayers;
 
-    [HideInInspector]
-    public Transform holdPoint;
-
-    [HideInInspector]
-    public Transform animationCatalyst;
-
+    // Cached transforms / state
+    private Transform holdPoint;               // Where the staff should follow (cached original parent)
     private Vector3 lastHoldPosition;
-
-    private Animator animator;
+    private Vector3 posVelocity;
 
     void Start()
     {
         maxAmmo = ammo;
 
+        // Ensure we have a fire point
         if (firePoint == null)
-        {
             firePoint = transform.Find("StaffFirePoint");
-        }
 
-        if (holdPoint != null)
+        if (firePoint == null)
+            Debug.LogWarning($"[{name}] No firePoint found. Assign a child named 'StaffFirePoint' or set the firePoint in inspector.");
+
+        // Cache parent as holdPoint (WeaponHoldPoint) then unparent so we can smooth-follow it
+        if (transform.parent != null)
         {
+            holdPoint = transform.parent;
             lastHoldPosition = holdPoint.position;
+            transform.SetParent(null); // keep world transform, but follow programmatically
         }
-
-        // Get animator from parent
-        animator = GetComponentInParent<Animator>();
+        else
+        {
+            Debug.LogWarning($"[{name}] Staff has no parent to follow. Make sure the staff prefab is parented to the weapon hold point in the hierarchy before runtime.");
+        }
 
         UpdateManaUI();
     }
 
-    void Update()
-    {
-        HandleBeamShotAnimation();
-    }
-
     void LateUpdate()
     {
-        if (holdPoint == null ||
-            animationCatalyst == null)
-            return;
+        if (holdPoint == null) return;
 
-        Vector3 holdDelta =
-            holdPoint.position - lastHoldPosition;
+        // Smooth position follow (exponential smoothing)
+        float posT = 1f - Mathf.Exp(-positionLag * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position, holdPoint.position, posT);
 
-        lastHoldPosition = holdPoint.position;
-
-        Vector3 targetPosition =
-            holdPoint.position + (-holdDelta);
-
-        float posT =
-            1f - Mathf.Exp(-positionLag * Time.deltaTime);
-
-        animationCatalyst.position = Vector3.Lerp(
-            animationCatalyst.position,
-            targetPosition,
-            posT
-        );
-
-        float rotT =
-            1f - Mathf.Exp(-rotationLag * Time.deltaTime);
-
-        animationCatalyst.rotation = Quaternion.Slerp(
-            animationCatalyst.rotation,
-            holdPoint.rotation,
-            rotT
-        );
+        // Smooth rotation follow (slerp)
+        float rotT = 1f - Mathf.Exp(-rotationLag * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, holdPoint.rotation, rotT);
     }
 
-    void HandleBeamShotAnimation()
+    // Public fire method - use this from StaffManager
+    public void Fire()
     {
-        if (!beamShot || animator == null)
-            return;
-
-        if (Input.GetMouseButton(0))
+        if (ammo <= 0)
         {
-            animator.SetBool("FireHeld", true);
+            // Optionally play empty sound / UI feedback here
+            return;
+        }
+
+        if (projectilePrefab == null)
+        {
+            Debug.LogWarning($"[{name}] No projectilePrefab assigned.");
+            return;
+        }
+
+        if (firePoint == null)
+        {
+            Debug.LogWarning($"[{name}] No firePoint assigned.");
+            return;
+        }
+
+        // Compute aim direction using camera ray from screen center so pitch is respected
+        Camera cam = Camera.main;
+        Vector3 direction;
+
+        if (cam != null)
+        {
+            Ray centerRay = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            if (Physics.Raycast(centerRay, out RaycastHit hit, aimMaxDistance, aimLayerMask))
+            {
+                Vector3 targetPoint = hit.point;
+                direction = (targetPoint - firePoint.position).normalized;
+            }
+            else
+            {
+                Vector3 farPoint = centerRay.GetPoint(aimMaxDistance);
+                direction = (farPoint - firePoint.position).normalized;
+            }
+        }
+        else if (holdPoint != null)
+        {
+            // Fallback to holdPoint forward if no camera found
+            direction = holdPoint.forward;
         }
         else
         {
-            animator.SetBool("FireHeld", false);
+            // Last-resort fallback
+            direction = transform.forward;
         }
-    }
 
-    public void Fire()
-    {
-        if (ammo <= 0 ||
-            firePoint == null ||
-            projectilePrefab == null)
-            return;
-
-        GameObject projectile = Instantiate(
-            projectilePrefab,
-            firePoint.position,
-            firePoint.rotation
-        );
-
+        // Spawn projectile facing the computed direction
+        GameObject projectile = Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(direction));
         Rigidbody rb = projectile.GetComponent<Rigidbody>();
 
         if (rb != null)
         {
-            Vector3 shootDirection =
-                (firePoint.forward * fireForce) +
-                (firePoint.up * upwardForce);
+            // Add velocity along aim direction and optional upward component relative to camera (if available)
+            Vector3 upward = Vector3.up;
+            if (cam != null)
+                upward = cam.transform.up;
+            else if (holdPoint != null)
+                upward = holdPoint.up;
 
-            rb.linearVelocity = shootDirection;
+            rb.linearVelocity = direction * fireForce + upward * upwardForce;
+        }
+        else
+        {
+            // If your projectile uses a projectile script instead of Rigidbody, call its initializer here
+            var projScript = projectile.GetComponent<MonoBehaviour>();
+            // Example: if it had a custom initializer you would call it, otherwise we simply warn.
+            Debug.LogWarning($"[{name}] projectilePrefab '{projectile.name}' has no Rigidbody. Make sure it has one or initialize velocity in its script.");
         }
 
         ammo--;
-
         UpdateManaUI();
     }
 
     public void RefillAmmo()
     {
         ammo = maxAmmo;
-
         UpdateManaUI();
     }
 
@@ -147,4 +153,8 @@ public class StaffController : MonoBehaviour
         if (manaText != null)
             manaText.text = $"{ammo} / {maxAmmo}";
     }
+
+    // Helper getters (optional)
+    public int GetAmmo() => ammo;
+    public int GetMaxAmmo() => maxAmmo;
 }
