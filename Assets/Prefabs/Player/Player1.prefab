@@ -125,7 +125,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3764860641872594870}
-  m_Enabled: 1
+  m_Enabled: 0
 --- !u!114 &4827891009004126413
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -219,6 +219,7 @@ GameObject:
   - component: {fileID: 6334252631369611472}
   - component: {fileID: 7500191867532654904}
   - component: {fileID: 4637484350776043283}
+  - component: {fileID: 4194449474406156166}
   m_Layer: 0
   m_Name: Player1
   m_TagString: Player
@@ -478,3 +479,18 @@ MonoBehaviour:
   staffSlots:
   - {fileID: 0}
   - {fileID: 0}
+--- !u!114 &4194449474406156166
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5077501906197933637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cebbf86e2491c75448439e03356b1056, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatus
+  ShowTopMostFoldoutHeaderGroup: 1
+  currentHP: 0
+  maxHP: 100
