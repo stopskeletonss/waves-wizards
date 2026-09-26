@@ -113,6 +113,10 @@ MonoBehaviour:
   manaText: {fileID: 0}
   positionLag: 100
   rotationLag: 20
+  aimMaxDistance: 1000
+  aimLayerMask:
+    serializedVersion: 2
+    m_Bits: 59
 --- !u!1 &4759750530538131981
 GameObject:
   m_ObjectHideFlags: 0
