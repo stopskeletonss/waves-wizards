@@ -221,4 +221,8 @@ public class FirstPersonController : NetworkBehaviour
 
         rb.linearVelocity = v;
     }
+    public void changeSpeed(float newSpeed)
+    {
+        moveSpeed = moveSpeed * newSpeed;
+    }
 }
