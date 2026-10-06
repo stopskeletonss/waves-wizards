@@ -3,7 +3,7 @@ using TMPro;
 
 public class StaffShop : MonoBehaviour
 {
-    [Header("Shop Settings")]
+    [Header("Staff Shop Settings")]
     public GameObject staffToSell;
     public int staffPrice = 1000;
     public int manaCost = 200; // Cost to conjure mana (refill ammo)
