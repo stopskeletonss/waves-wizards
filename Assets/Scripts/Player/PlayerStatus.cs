@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 //Not sure if this is neededbut we "probably" won't need multiple status' on a player game object
 [DisallowMultipleComponent]
@@ -13,12 +14,15 @@ public class PlayerStatus : NetworkBehaviour
     private bool isAlive;
     private FirstPersonController FPC;
     private bool invulnerable = false;
+    //private Label healthUI;
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
         isAlive = true;
         currentHP = maxHP;
         FPC = GetComponent<FirstPersonController>();
+       // var uiRef = GetComponent<UIDocument>().rootVisualElement;
+       // healthUI =  uiRef.Q<Label>("HPAmount");
     }
 
     // Update is called once per frame
@@ -43,10 +47,11 @@ public class PlayerStatus : NetworkBehaviour
         
         if(!invulnerable)
         {
-        Debug.Log("Applying Damage!");
+        //Debug.Log("Applying Damage!");
         //applies damage from currentHP
         currentHP -= damageAmount;
-        Debug.Log("HP: " + currentHP);
+        //healthUI.text = currentHP.ToString();
+        //Debug.Log("HP: " + currentHP);
         
             aliveCheck();
         }

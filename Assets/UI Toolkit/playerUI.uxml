@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="Container" style="flex-grow: 1;">
+        <ui:Label text="HP: " name="HP" style="position: absolute; bottom: 0; font-size: 45px; -unity-font-style: bold; color: rgb(255, 255, 255);"/>
+        <ui:Label text="100" name="HPAmount" style="position: absolute; bottom: 0; font-size: 45px; -unity-font-style: bold; color: rgb(255, 255, 255); -unity-text-align: upper-center; left: 85px;"/>
+    </ui:VisualElement>
+</ui:UXML>
