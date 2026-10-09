@@ -62,6 +62,16 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        // for testing functionality of UI health bar
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            PlayerStatus playerStatus = GetComponent<PlayerStatus>();
+
+            if (playerStatus != null)
+            {
+                playerStatus.takeDamage(10f);
+            }
+        }
         ReadInput();
         HandleMouseLook();
         HandleMovement();

@@ -111,6 +111,18 @@ public class FirstPersonController : NetworkBehaviour
         //Grabs inputs
         if (!IsOwner) return;
 
+        // for testing functionality of UI health bar
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            PlayerStatus playerStatus = GetComponent<PlayerStatus>();
+
+            if (playerStatus != null)
+            {
+                playerStatus.takeDamage(10f);
+            }
+        }
+ 
+
         float mx = Input.GetAxisRaw("Mouse X") * mouseSensitivity;
         float my = Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
 
