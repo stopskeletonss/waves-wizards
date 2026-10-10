@@ -1309,6 +1309,12 @@ MonoBehaviour:
   maxLookAngle: 85
   moveSpeed: 5
   sprintSpeed: 8
+  acceleration: 12
+  deceleration: 15
+  bobFrequency: 12
+  bobAmplitude: 0.05
+  sprintBobMultiplier: 1.25
+  bobReturnSpeed: 10
   jumpVelocity: 6
   gravity: -5
   groundCheckDistance: 1.05
@@ -1330,8 +1336,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6305a38bfb0a00840a7ecb91bea6bc76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   weaponManager: {fileID: 4637484350776043283}
   firePoint: {fileID: 5553738496185666359}
+  playerCamera: {fileID: 7821081654734912899}
 --- !u!114 &4637484350776043283
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1344,6 +1352,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5e10e553ee2db4488be19afcfe141e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   starterStaffPrefab: {fileID: 1487227951881924249, guid: 4a7fed53a48d8734688bbe7997606a61, type: 3}
   weaponHoldPoint: {fileID: 6186882274280219239}
   staffSlots:

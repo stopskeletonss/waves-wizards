@@ -19,6 +19,16 @@ public class FirstPersonController : NetworkBehaviour
     [SerializeField] private float moveSpeed = 12f;
     [SerializeField] private float sprintSpeed = 20f;
 
+    [Header("Movement Smoothing")]
+    [SerializeField] private float acceleration = 12f;
+    [SerializeField] private float deceleration = 10f;
+
+    [Header("Head Bobbing")]
+    [SerializeField] private float bobFrequency = 6f;
+    [SerializeField] private float bobAmplitude = 0.05f;
+    [SerializeField] private float sprintBobMultiplier = 1.5f;
+    [SerializeField] private float bobReturnSpeed = 10f;
+
     [Header("Jump")]
     //This messes with how strong our jumps are. We can make the player jump higher with jumpVelocity, and gravity changes how fast they come back down.
     [SerializeField] private float jumpVelocity = 7f;
@@ -51,6 +61,21 @@ public class FirstPersonController : NetworkBehaviour
     private float lastGroundedTime;
     private float lastJumpPressedTime;
 
+    //Head bob state
+    private float bobTimer;
+    private Vector3 cameraInitialLocalPosition;
+
+    public Camera PlayerCamera
+    {
+        get
+        {
+            if (playerCamera == null)
+                return null;
+
+            return playerCamera.GetComponent<Camera>();
+        }
+    }
+
 
     //This is the Start() method used for networking objects. We are spawning in this gameobject when the network is created.
     public override void OnNetworkSpawn()
@@ -71,7 +96,7 @@ public class FirstPersonController : NetworkBehaviour
         //Make sure the player has a camera on it.
         if (playerCamera == null)
         {
-            var cam = GetComponentInChildren<Camera>(true);
+            Camera cam = GetComponentInChildren<Camera>(true);
             if (cam != null) playerCamera = cam.transform;
         }
 
@@ -82,8 +107,9 @@ public class FirstPersonController : NetworkBehaviour
         //Assign
         if (playerCamera != null)
         {
-            var cam = playerCamera.GetComponent<Camera>();
+            Camera cam = playerCamera.GetComponent<Camera>();
             if (cam != null) cam.enabled = IsOwner;
+            cameraInitialLocalPosition = playerCamera.localPosition;
         }
 
         //Assign
@@ -152,6 +178,15 @@ public class FirstPersonController : NetworkBehaviour
     }
 
 
+    private void LateUpdate()
+    {
+        if (!IsSpawned || !IsOwner || playerCamera == null)
+            return;
+
+        HandleHeadBobbing();
+    }
+
+
     //This checks if the player is touching the ground, and allows them to jump if able.
     private void DoGroundCheck()
     {
@@ -213,9 +248,12 @@ public class FirstPersonController : NetworkBehaviour
             wishDir = Vector3.ProjectOnPlane(wishDir, groundNormal).normalized;
 
         Vector3 v = rb.linearVelocity;
-        Vector3 horizontal = wishDir * speed;
+        Vector3 wishHorizontal = wishDir * speed;
+        Vector3 curHorizontal = new Vector3(v.x, 0f, v.z);
+        float smoothingRate = inputDir.sqrMagnitude > 0.01f ? acceleration : deceleration;
+        Vector3 smoothedHorizontal = Vector3.MoveTowards(curHorizontal, wishHorizontal, smoothingRate * Time.fixedDeltaTime);
 
-        rb.linearVelocity = new Vector3(horizontal.x, v.y, horizontal.z);
+        rb.linearVelocity = new Vector3(smoothedHorizontal.x, v.y, smoothedHorizontal.z);
     }
 
 
@@ -240,5 +278,34 @@ public class FirstPersonController : NetworkBehaviour
         }
 
         rb.linearVelocity = v;
+    }
+
+
+    private void HandleHeadBobbing()
+    {
+        Vector3 v = rb.linearVelocity;
+        float horizontalSpeed = new Vector2(v.x, v.z).magnitude;
+        bool isMoving = horizontalSpeed > 0.1f && isGrounded;
+        Vector3 targetCameraPosition = cameraInitialLocalPosition;
+
+        // apply head bobbing if the player is mmoving
+        if (isMoving)
+        {
+            float speedMultiplier = sprintHeld ? sprintBobMultiplier : 1f;
+            bobTimer += Time.deltaTime * bobFrequency * speedMultiplier;
+
+            float bobOffset = Mathf.Sin(bobTimer) * bobAmplitude * speedMultiplier;
+            targetCameraPosition = cameraInitialLocalPosition + new Vector3(0f, bobOffset, 0f);
+        }
+        else
+        {
+            bobTimer = 0f;
+        }
+        // smoothly return the camera to its normal height when the player stops walking/sprinting
+        playerCamera.localPosition = Vector3.Lerp(
+            playerCamera.localPosition,
+            targetCameraPosition,
+            bobReturnSpeed * Time.deltaTime
+        );
     }
 }

@@ -5,7 +5,7 @@ public class StaffFireInput : NetworkBehaviour
 {
     public StaffManager weaponManager;
     public Transform firePoint; // position and direction from which the projectile is fired (set up in staff prefabs)
-
+    public Camera playerCamera;
 
     public override void OnNetworkSpawn()
     {
@@ -77,14 +77,31 @@ public class StaffFireInput : NetworkBehaviour
         if (currentStaff == null || currentStaff.projectilePrefab == null || currentStaff.ammo <= 0)
             return;
 
-        // send a request to the server to create the projectile prefab
-        FireStaffServerRpc(firePoint.position, firePoint.rotation);
+        // cast a ray from the centre of the player's screen
+        Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+
+        Vector3 targetPoint;
+
+        // aim wherever the player is looking
+        if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
+        {
+            targetPoint = hit.point;
+        } else
+        {
+            targetPoint = ray.GetPoint(1000f);
+        }
+
+        // calculate the direction from the staff's target point to where the player is looking
+        Vector3 shootDirection = (targetPoint - firePoint.position).normalized;
+
+            // send a request to the server to create the projectile prefab
+            FireStaffServerRpc(firePoint.position, shootDirection);
     }
 
 
     // runs on the server when the owner (player) requests a projectile
     // because the server is responsible for spawning the projectile
-    [ServerRpc] void FireStaffServerRpc(Vector3 spawnPosition, Quaternion spawnRotation)
+    [ServerRpc] void FireStaffServerRpc(Vector3 spawnPosition, Vector3 shootDirection)
     {
         if (weaponManager == null)
             return;
@@ -93,6 +110,9 @@ public class StaffFireInput : NetworkBehaviour
 
         if (currentStaff == null || currentStaff.projectilePrefab == null || currentStaff.ammo <= 0)
             return;
+
+        // rotate the projectile to face where the player is aiming
+        Quaternion spawnRotation = Quaternion.LookRotation(shootDirection);
 
         // create the projectile
         GameObject projectile = Instantiate(currentStaff.projectilePrefab, spawnPosition, spawnRotation);
@@ -110,12 +130,9 @@ public class StaffFireInput : NetworkBehaviour
             rb.angularVelocity = Vector3.zero;
 
             // calculate the direction the projectile should travel
-            Vector3 shootDirection =
-                (spawnRotation * Vector3.forward)
-                * currentStaff.fireForce
+            rb.linearVelocity =
+                shootDirection * currentStaff.fireForce
                 + Vector3.up * currentStaff.upwardForce;
-
-            rb.linearVelocity = shootDirection;
         }
         currentStaff.ammo--;
     }
