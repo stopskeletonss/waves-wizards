@@ -106,7 +106,7 @@ public class EnemyAITest : NetworkBehaviour
         {
             applyDamage = false;
             //Debug.Log("In Range!");
-            playerStatus.takeDamage(AttackDamage);
+            playerStatus.TakeDamage(AttackDamage);
         }
     }
 

@@ -118,7 +118,7 @@ public class FirstPersonController : NetworkBehaviour
 
             if (playerStatus != null)
             {
-                playerStatus.takeDamage(10f);
+                playerStatus.TakeDamage(10f);
             }
         }
  

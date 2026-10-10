@@ -69,7 +69,7 @@ public class PlayerController : MonoBehaviour
 
             if (playerStatus != null)
             {
-                playerStatus.takeDamage(10f);
+                playerStatus.TakeDamage(10f);
             }
         }
         ReadInput();
