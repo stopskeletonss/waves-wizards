@@ -1,10 +1,12 @@
 using Unity.Netcode;
 using UnityEngine;
 
-//I learnt this command that stops Unity from accidentally assigning multiple controllers to the same Gameobject. Mostly for bug prevention but could save some headaches once we start to have multiple instances of players in game.
+//Command that stops Unity from accidentally assigning multiple controllers to the same Gameobject
+//Mostly for bug prevention but could save some headaches once we start to have multiple instances of players in game
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
+
 public class FirstPersonController : NetworkBehaviour
 {
     [Header("References")]
@@ -13,8 +15,7 @@ public class FirstPersonController : NetworkBehaviour
 
     [Header("Movement")]
     [SerializeField] private float mouseSensitivity = 2f;
-    //This stops the player from looking directly down. It will help with clipping issues once we have models imported.
-    [SerializeField] private float maxLookAngle = 85f;
+    [SerializeField] private float maxLookAngle = 85f; //This stops the player from looking directly down. It will help with clipping issues once we have models imported.
     [SerializeField] private float moveSpeed = 12f;
     [SerializeField] private float sprintSpeed = 20f;
 
@@ -29,13 +30,13 @@ public class FirstPersonController : NetworkBehaviour
     [SerializeField] private float coyoteTime = 0.1f;
     [SerializeField] private float jumpBufferTime = 0.1f;
 
-    //Rigidbody settings.
-    private float maxSlopeAngle = 60f;
+    [Header("Physics")]
+    [SerializeField] private float maxSlopeAngle = 60f;
 
     private Rigidbody rb;
     private CapsuleCollider capsule;
 
-    //floats for camera movement. Pitch is up and down and Yaw is left and right.
+    //Floats for camera movement. Pitch is up and down and Yaw is left and right.
     private float pitch;
     private float yaw;
 
@@ -49,6 +50,7 @@ public class FirstPersonController : NetworkBehaviour
     //lastGroundedTime is for Coyote Time, and lastJumpPressedTime prevents jump spam (mostly so we prevent bhopping and our game doesn't play like Quake).
     private float lastGroundedTime;
     private float lastJumpPressedTime;
+
 
     //This is the Start() method used for networking objects. We are spawning in this gameobject when the network is created.
     public override void OnNetworkSpawn()
@@ -96,6 +98,7 @@ public class FirstPersonController : NetworkBehaviour
         }
     }
 
+
     private void OnDisable()
     {
         //Return the cursor if the player is disabled
@@ -106,12 +109,13 @@ public class FirstPersonController : NetworkBehaviour
         }
     }
 
+
     private void Update()
     {
         //Grabs inputs
-        if (!IsOwner) return;
+        if (!IsSpawned || !IsOwner) return;
 
-        // for testing functionality of UI health bar
+        //Debugging: For testing functionality of UI health bar
         if (Input.GetKeyDown(KeyCode.K))
         {
             PlayerStatus playerStatus = GetComponent<PlayerStatus>();
@@ -122,7 +126,6 @@ public class FirstPersonController : NetworkBehaviour
             }
         }
  
-
         float mx = Input.GetAxisRaw("Mouse X") * mouseSensitivity;
         float my = Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
 
@@ -137,15 +140,17 @@ public class FirstPersonController : NetworkBehaviour
             lastJumpPressedTime = Time.time;
     }
 
+
     private void FixedUpdate()
     {
-        if (!IsOwner) return;
+        if (!IsSpawned || !IsOwner) return;
         //This moves the player every frame.
         DoGroundCheck();
         ApplyLook();
         ApplyMovement();
         ApplyGravityAndJump();
     }
+
 
     //This checks if the player is touching the ground, and allows them to jump if able.
     private void DoGroundCheck()
@@ -185,6 +190,7 @@ public class FirstPersonController : NetworkBehaviour
         rb.linearDamping = 0f;
     }
 
+
     private void ApplyLook()
     {
         rb.MoveRotation(Quaternion.Euler(0f, yaw, 0f));
@@ -192,6 +198,7 @@ public class FirstPersonController : NetworkBehaviour
         if (playerCamera != null)
             playerCamera.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
+
 
     private void ApplyMovement()
     {
@@ -210,6 +217,7 @@ public class FirstPersonController : NetworkBehaviour
 
         rb.linearVelocity = new Vector3(horizontal.x, v.y, horizontal.z);
     }
+
 
     private void ApplyGravityAndJump()
     {
