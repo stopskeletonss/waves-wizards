@@ -1317,6 +1317,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   coyoteTime: 0.1
   jumpBufferTime: 0.1
+  maxSlopeAngle: 60
 --- !u!114 &7500191867532654904
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1343,7 +1344,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5e10e553ee2db4488be19afcfe141e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  starterStaffPrefab: {fileID: 1487227951881924249, guid: 478f96425caa0584c849a50bb08652e5, type: 3}
+  starterStaffPrefab: {fileID: 1487227951881924249, guid: 4a7fed53a48d8734688bbe7997606a61, type: 3}
   weaponHoldPoint: {fileID: 6186882274280219239}
   staffSlots:
   - {fileID: 0}
