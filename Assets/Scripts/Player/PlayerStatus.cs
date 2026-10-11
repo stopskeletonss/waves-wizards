@@ -7,7 +7,7 @@ using UnityEngine;
 public class PlayerStatus : NetworkBehaviour
 {
     [Header("Health")]
-    [SerializeField] private float maxHP = 100f;
+    [SerializeField] public float maxHP = 100f;
 
     public NetworkVariable<float> CurrentHP =
         new NetworkVariable<float>(
