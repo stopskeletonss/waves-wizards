@@ -44,6 +44,11 @@ public class PlayerController : MonoBehaviour
     private float bobTimer = 0f;
     private Vector3 cameraInitialPos;
 
+    public Animator animator;
+    public bool isSprinting;
+    public bool isMoving;
+    public bool isGrounded;
+
     void Start()
     {
         controller = GetComponent<CharacterController>();
@@ -110,16 +115,24 @@ public class PlayerController : MonoBehaviour
     // --------------------
     void HandleMovement()
     {
-        bool isGrounded = controller.isGrounded;
+        // Check whether the player is grounded before moving
+        bool groundedBeforeMove = controller.isGrounded;
+        isGrounded = groundedBeforeMove;
 
-        float targetSpeed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : moveSpeed;
+        // Determine whether the player is trying to sprint
+        bool sprintInput = Input.GetKey(KeyCode.LeftShift);
+
+        float targetSpeed = sprintInput ? sprintSpeed : moveSpeed;
 
         Vector3 moveDirection =
             (transform.right * input.x + transform.forward * input.y).normalized;
 
         Vector3 targetHorizontalVelocity = moveDirection * targetSpeed;
 
-        float rate = moveDirection.magnitude > 0.1f ? acceleration : deceleration;
+        // Smooth acceleration and deceleration
+        float rate = moveDirection.magnitude > 0.1f
+            ? acceleration
+            : deceleration;
 
         horizontalVelocity = Vector3.Lerp(
             horizontalVelocity,
@@ -127,7 +140,8 @@ public class PlayerController : MonoBehaviour
             Time.deltaTime * rate
         );
 
-        if (isGrounded)
+        // Handle jumping and gravity
+        if (groundedBeforeMove)
         {
             if (velocity.y < 0f)
                 velocity.y = -2f;
@@ -142,11 +156,30 @@ public class PlayerController : MonoBehaviour
             velocity.y += gravity * Time.deltaTime;
         }
 
+        // Apply movement
         Vector3 finalMove =
             horizontalVelocity +
             Vector3.up * velocity.y;
 
         controller.Move(finalMove * Time.deltaTime);
+
+        // Update the grounded state after movement
+        isGrounded = controller.isGrounded;
+
+        // Check actual horizontal movement
+        bool isMoving = horizontalVelocity.magnitude > 0.1f;
+
+        // Update the player's movement states
+        isMoving = isMoving && isGrounded;
+        isSprinting = isMoving && sprintInput && isGrounded;
+
+        // Update Animator parameters
+        if (animator != null)
+        {
+            animator.SetBool("Walking", isMoving);
+            animator.SetBool("Sprinting", isSprinting);
+            animator.SetBool("Grounded", isGrounded);
+        }
     }
 
     // --------------------

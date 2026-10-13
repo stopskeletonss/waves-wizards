@@ -1,6 +1,11 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Prefabs/Staffs/BaseStaff.prefab.meta
+guid: ebb60e431d9855e46b2f95bbcb838f3e
+PrefabImporter:
+========
 guid: b9d25555aafc57a4e9e943ba67473cc6
 DefaultImporter:
+>>>>>>>> 75f136f046a3dd7f88d8cf51103554404999ca79:Assets/Models/MMBook/Page/MainMenuPage_Code.pdn.meta
   externalObjects: {}
   userData: 
   assetBundleName: 
