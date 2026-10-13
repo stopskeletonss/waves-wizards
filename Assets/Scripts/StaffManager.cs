@@ -15,7 +15,7 @@ public class StaffManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        if (!IsOwner)
+        if (weaponHoldPoint == null)
             return;
 
 

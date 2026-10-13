@@ -68,7 +68,7 @@ public class StaffFireInput : NetworkBehaviour
     // fires a projectile from the player's staff, if able
     void FireStaff()
     {
-        if (weaponManager == null || firePoint == null)
+        if (weaponManager == null || firePoint == null || playerCamera == null)
             return;
 
         StaffController currentStaff = weaponManager.GetCurrentStaff(); // get the equipped staff
