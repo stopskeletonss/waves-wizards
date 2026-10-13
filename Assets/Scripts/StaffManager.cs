@@ -18,8 +18,7 @@ public class StaffManager : NetworkBehaviour
         if (weaponHoldPoint == null)
             return;
 
-
-        // equip the starter (base) staff in slot 0 if there is not staff already in slot 0
+        // equip the starter (base) staff in slot 0 if there is no staff already in slot 0
         if (staffSlots[0] == null && starterStaffPrefab != null)
         {
             GameObject starter = Instantiate(starterStaffPrefab, weaponHoldPoint);
@@ -28,9 +27,9 @@ public class StaffManager : NetworkBehaviour
 
             staffSlots[0] = starter;
         }
+
         EquipStaff(0);
     }
-
 
     void Update()
     {
@@ -40,18 +39,12 @@ public class StaffManager : NetworkBehaviour
         HandleInput();
     }
 
-
     void HandleInput()
     {
         // reload currently equipped staff with 'R'
         if (Input.GetKeyDown(KeyCode.R))
         {
-            StaffController staff = GetCurrentStaff();
-            if (staff != null)
-            {
-                staff.RefillAmmo();
-                Debug.Log("Reloaded staff: " + staff.gameObject.name);
-            }
+            ReloadStaffServerRpc();
         }
 
         // switch between staffs using '1' and '2'
@@ -68,23 +61,44 @@ public class StaffManager : NetworkBehaviour
             ScrollStaff(1);
     }
 
+    // runs on the server when the owner requests a reload
+    [ServerRpc]
+    void ReloadStaffServerRpc(ServerRpcParams rpcParams = default)
+    {
+        // get the staff manager belonging to the player who requested the reload
+        if (NetworkManager.Singleton == null)
+            return;
+
+        StaffController staff = GetCurrentStaff();
+
+        if (staff != null)
+        {
+            staff.RefillAmmo();
+            Debug.Log("Reloaded staff: " + staff.gameObject.name);
+        }
+    }
 
     // handles scrolling to switch staffs
     void ScrollStaff(int direction)
     {
         int newSlot = currentSlot + direction;
-        if (newSlot < 0) newSlot = staffSlots.Length - 1; // wrap around when you go past the start or end of the staff inventory
-        if (newSlot >= staffSlots.Length) newSlot = 0;
+        if (newSlot < 0)
+            newSlot = staffSlots.Length - 1; // wrap around when you go past the start or end of the staff inventory
+
+        if (newSlot >= staffSlots.Length)
+            newSlot = 0;
 
         EquipStaff(newSlot);
     }
 
-
     // handles switching between staffs
     void EquipStaff(int slotIndex)
     {
-        if (slotIndex < 0 || slotIndex >= staffSlots.Length) return;
-        if (staffSlots[slotIndex] == null) return;
+        if (slotIndex < 0 || slotIndex >= staffSlots.Length)
+            return;
+
+        if (staffSlots[slotIndex] == null)
+            return;
 
         for (int i = 0; i < staffSlots.Length; i++)
         {
@@ -99,31 +113,37 @@ public class StaffManager : NetworkBehaviour
         onStaffEquipped?.Invoke(staffSlots[slotIndex]);
     }
 
-
     // getter to get the currently equipped staff
     public StaffController GetCurrentStaff()
     {
-        if (staffSlots[currentSlot] == null) return null;
+        if (currentSlot < 0 || currentSlot >= staffSlots.Length)
+            return null;
+
+        if (staffSlots[currentSlot] == null)
+            return null;
+
         return staffSlots[currentSlot].GetComponent<StaffController>();
     }
-
 
     // getter to count the inventory slots that contain a staff
     public int GetStaffCount()
     {
         int count = 0;
+
         foreach (var staff in staffSlots)
         {
-            if (staff != null) count++;
+            if (staff != null)
+                count++;
         }
+
         return count;
     }
-
 
     // handles adding a staff to the player's inventory
     public void AddStaffToSlot(int slotIndex, GameObject newStaffPrefab)
     {
-        if (slotIndex < 0 || slotIndex >= staffSlots.Length) return;
+        if (slotIndex < 0 || slotIndex >= staffSlots.Length)
+            return;
 
         if (staffSlots[slotIndex] != null)
         {
@@ -135,9 +155,9 @@ public class StaffManager : NetworkBehaviour
         newStaff.transform.localPosition = Vector3.zero;
         newStaff.transform.localRotation = Quaternion.identity;
         newStaff.SetActive(false);
+
         staffSlots[slotIndex] = newStaff;
     }
-
 
     // handles replacing the currently equipped staff
     public void ReplaceActiveStaff(GameObject newStaffPrefab)
@@ -146,7 +166,6 @@ public class StaffManager : NetworkBehaviour
         EquipStaff(currentSlot);
     }
 
-    
     // handles refilling ammo
     public void RefillAmmoForStaff(GameObject staffPrefab)
     {
@@ -155,6 +174,7 @@ public class StaffManager : NetworkBehaviour
             if (staff != null && staff.name.Contains(staffPrefab.name))
             {
                 StaffController controller = staff.GetComponent<StaffController>();
+
                 if (controller != null)
                 {
                     controller.RefillAmmo();
