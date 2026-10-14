@@ -53,7 +53,7 @@ public class FirstPersonController : NetworkBehaviour
     //Because I am using moveInput, we should be able to naturally convert controller input into this as well.
     private Vector2 moveInput;
     private bool sprintHeld;
-
+    private bool isMoving;
     private bool isGrounded;
     private Vector3 groundNormal = Vector3.up;
 
@@ -64,6 +64,29 @@ public class FirstPersonController : NetworkBehaviour
     //Head bob state
     private float bobTimer;
     private Vector3 cameraInitialLocalPosition;
+
+    // networked animation states
+    public Animator animator;
+
+    private NetworkVariable<bool> networkWalking = new NetworkVariable<bool>(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    private NetworkVariable<bool> networkSprinting = new NetworkVariable<bool>(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    private NetworkVariable<bool> networkGrounded = new NetworkVariable<bool>(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    // stores last states sent to the server so ServerRpc isn't sent when there are no state changes
+    private bool lastWalk;
+    private bool lastSprint;
+    private bool lastGround;
 
     public Camera PlayerCamera
     {
@@ -122,6 +145,28 @@ public class FirstPersonController : NetworkBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
+
+        HideOwnModel();
+
+        // listen for animation updates from the server
+        networkWalking.OnValueChanged += OnNetworkAnimationChanged;
+        networkSprinting.OnValueChanged += OnNetworkAnimationChanged;
+        networkGrounded.OnValueChanged += OnNetworkAnimationChanged;
+
+        // find the current character model's Animator
+        RefreshAnimator();
+        ApplyAnimatorParameters(networkWalking.Value, networkSprinting.Value, networkGrounded.Value);
+    }
+
+
+    public override void OnNetworkDespawn()
+    {
+        // stop listening for animation updates
+        networkWalking.OnValueChanged -= OnNetworkAnimationChanged;
+        networkSprinting.OnValueChanged -= OnNetworkAnimationChanged;
+        networkGrounded.OnValueChanged -= OnNetworkAnimationChanged;
+
+        base.OnNetworkDespawn();
     }
 
 
@@ -138,19 +183,9 @@ public class FirstPersonController : NetworkBehaviour
 
     private void Update()
     {
-        //Grabs inputs
         if (!IsSpawned || !IsOwner) return;
 
-        //Debugging: For testing functionality of UI health bar
-        if (Input.GetKeyDown(KeyCode.K))
-        {
-            PlayerStatus playerStatus = GetComponent<PlayerStatus>();
-
-            if (playerStatus != null)
-            {
-                playerStatus.TakeDamage(10f);
-            }
-        }
+        RefreshAnimator();
  
         float mx = Input.GetAxisRaw("Mouse X") * mouseSensitivity;
         float my = Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
@@ -175,13 +210,24 @@ public class FirstPersonController : NetworkBehaviour
         ApplyLook();
         ApplyMovement();
         ApplyGravityAndJump();
+
+        //update the local animations immediately and synchronize with other players
+        UpdateAnimationState();
     }
 
 
     private void LateUpdate()
     {
-        if (!IsSpawned || !IsOwner || playerCamera == null)
+        if (!IsSpawned)
             return;
+
+        RefreshAnimator();
+
+        if (!IsOwner)
+        {
+            ApplyAnimatorParameters(networkWalking.Value, networkSprinting.Value, networkGrounded.Value);
+            return;
+        }
 
         HandleHeadBobbing();
     }
@@ -285,7 +331,7 @@ public class FirstPersonController : NetworkBehaviour
     {
         Vector3 v = rb.linearVelocity;
         float horizontalSpeed = new Vector2(v.x, v.z).magnitude;
-        bool isMoving = horizontalSpeed > 0.1f && isGrounded;
+        isMoving = horizontalSpeed > 0.1f && isGrounded;
         Vector3 targetCameraPosition = cameraInitialLocalPosition;
 
         // apply head bobbing if the player is mmoving
@@ -307,5 +353,99 @@ public class FirstPersonController : NetworkBehaviour
             targetCameraPosition,
             bobReturnSpeed * Time.deltaTime
         );
+    }
+
+
+    // finds the Animator on the current character model
+    private void RefreshAnimator()
+    {
+        Animator[] childAnimators = GetComponentsInChildren<Animator>(true);
+        Animator activeAnimator = null;
+
+        foreach (Animator childAnimator in childAnimators)
+        {
+            if (childAnimator != null && childAnimator.enabled && childAnimator.gameObject.activeInHierarchy)
+            {
+                activeAnimator = childAnimator;
+                break;
+            }
+        }
+        animator = activeAnimator;
+    }
+
+
+    // updates the animator state for the local player
+    private void UpdateAnimationState()
+    {
+        Vector3 v = rb.linearVelocity;
+        float horizontalSpeed = new Vector2(v.x, v.z).magnitude;
+        isMoving = horizontalSpeed > 0.1f && isGrounded;
+
+        ApplyAnimatorParameters(isMoving, sprintHeld, isGrounded);
+
+        // only send an update when an animation state changes
+        if (isMoving == lastWalk &&
+            sprintHeld == lastSprint &&
+            isGrounded == lastGround)
+        {
+            return;
+        }
+
+        lastWalk = isMoving;
+        lastSprint = sprintHeld;
+        lastGround = isGrounded;
+
+        SetAnimationStateServerRpc(isMoving, sprintHeld, isGrounded); // send state changes to other clients
+    }
+
+
+    [ServerRpc]
+    private void SetAnimationStateServerRpc(bool walking, bool sprinting, bool grounded)
+    {
+        Debug.Log(
+        $"[Server] Player {OwnerClientId}: " +
+        $"Walking={walking}, " +
+        $"Sprinting={sprinting}, " +
+        $"Grounded={grounded}"
+        );
+
+        networkWalking.Value = walking;
+        networkSprinting.Value = sprinting;
+        networkGrounded.Value = grounded;
+    }
+
+
+    // called when an animation state changes
+    private void OnNetworkAnimationChanged(bool previousValue, bool newValue)
+    {
+        ApplyAnimatorParameters(networkWalking.Value, networkSprinting.Value, networkGrounded.Value);
+    }
+
+
+    private void ApplyAnimatorParameters(bool walking, bool sprinting, bool grounded)
+    {
+        if (animator == null || !animator.gameObject.activeInHierarchy)
+            return;
+
+        animator.SetBool("Walking", walking);
+        animator.SetBool("Sprinting", sprinting);
+        animator.SetBool("Grounded", grounded);
+    }
+
+
+    // hides the player's own local character model from only them
+    private void HideOwnModel()
+    {
+        // only hide the model for the player who is this character
+        if (!IsOwner)
+            return;
+
+        // find all renderers on the player
+        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+
+        foreach (Renderer renderer in renderers)
+        {
+            renderer.enabled = false; // hide the character model
+        }
     }
 }
