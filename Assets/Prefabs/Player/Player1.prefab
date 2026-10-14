@@ -2009,11 +2009,11 @@ MonoBehaviour:
   playerCamera: {fileID: 7668953515380499954}
   audioListener: {fileID: 4315543066962592374}
   mouseSensitivity: 2
-  maxLookAngle: 85
+  maxLookAngle: 65
   moveSpeed: 5
   sprintSpeed: 8
   acceleration: 12
-  deceleration: 15
+  deceleration: 20
   bobFrequency: 12
   bobAmplitude: 0.05
   sprintBobMultiplier: 1.25
