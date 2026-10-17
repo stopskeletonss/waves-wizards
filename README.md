@@ -22,10 +22,10 @@ Multiplayer runs on **Unity Netcode for GameObjects (NGO) 2.11.0** over the **Un
 1. Open the project in **Unity 6000.3.9f1**. Anything older will not open the scenes.
 2. Open [Assets/Scenes/NetworkTest.unity](Assets/Scenes/NetworkTest.unity). This is the only scene with a `NetworkManager` in it, and therefore the only scene multiplayer currently works in.
 3. Press **Play**.
-4. Select the **NetworkManager** object in the Hierarchy on the left-hand side of the screen in the **DontDestroyOnLoad** dropdown. In the Inspector, Netcode creates **Start Host / Start Server / Start Client** buttons during play mode. Click **Start Host**.
-5. To test with a second player, either build a standalone player and run it alongside the editor, or use Unity's Multiplayer Play Mode (virtual players). Clients connect to `127.0.0.1:7777` by default.
+4. Click **Start Host** in the top-left on-screen menu (drawn by `NetworkStartButtons`). This signs in anonymously to Unity Gaming Services, creates a **Relay** allocation, and displays a **join code**. Press `C` to copy the code to the clipboard.
+5. On another machine (or a Multiplayer Play Mode virtual player), enter the join code in the text field and click **Join Game**. Up to 3 players can join the host (4 total).
 
-There is no in-game connection UI yet. Hosting/joining is done through the NetworkManager inspector buttons.
+Because connections go through Unity Relay, players do not need to be on the same network and no ports need to be opened. The project must be linked to a Unity Cloud project (**Edit → Project Settings → Services**) for Relay sign-in to work.
 
 
 
@@ -41,6 +41,8 @@ There is no in-game connection UI yet. Hosting/joining is done through the Netwo
 | `R` | Refill staff ammo |
 | `E` | Interact with shop |
 | `Scroll Wheel / 1 / 2` | Switch between staffs |
+| `C` | Copy the Relay join code (host) |
+| `Esc` | Back out of a main menu sub-page |
 
 
 
@@ -50,14 +52,17 @@ There is no in-game connection UI yet. Hosting/joining is done through the Netwo
 - `Assets/Scenes/Ian'sTavern.unity`: The updated tavern scene that will be the first playable level.
 - `Assets/Scenes/MainMenuScene.unity`: The main menu, set inside of the original tavern.
 - `Assets/Scenes/Hub.unity`: Lobby hub to invite other players before starting a level. It will have various sections, including target practice, an area to view achievements, and more. 
-- `Assets/Scenes/NetworkTest.unity`: Currently the only scene with a working network manager. Used for testing/debugging.
+- `Assets/Scenes/NetworkTest.unity`: Currently the only scene with a working network manager. Now contains Ian's tavern, the health UI overlay, and the character assignment manager.
+- `Assets/Scenes/LocalTesting/LocalTavern.unity`: Non-networked copy of the tavern for testing single-player features (e.g. the health UI) without starting a host.
+- `Assets/Scenes/KevinVFXStuff.unity`: Sandbox scene for VFX/projectile work.
+- `Assets/_Recovery/`: Unity auto-recovery scenes. Not used; safe to delete.
 
 Scenes in the Build Settings:
 
-- `Assets/Scenes/TheTavern.unity` (index 0)
-- `Assets/Scenes/NetworkTest.unity` (index 1)
+- `Assets/Scenes/TheTavern.unity` (disabled)
+- `Assets/Scenes/NetworkTest.unity` (**enabled**, the only scene in the build)
 
-Only scenes in the Build Settings will be bundled when the game is exported. The scene at index 0 will be the first scene to load when the game starts.
+Only enabled scenes in the Build Settings will be bundled when the game is exported. The first enabled scene is the one that loads when the game starts.
 
 ---
 
@@ -79,7 +84,6 @@ Assets/
 │   ├── Staffs/               staff models, most with a base + upgraded variant
 │   ├── TavernLevel/          Clock tower + dock models
 │   └── The_Hub/              Training dummies and practice targets
-├── Networking Stuff/         
 ├── Prefabs/
 │   ├── Enemies/
 │   ├── Player/
@@ -87,12 +91,12 @@ Assets/
 │   ├── Staffs/
 │   └── VFX/
 ├── Samples/                  Imported VFX Graph sample content (Lightning, Smoke, Sparks)
-├── Scenes/                   Hub, Ian'sTavern, MainMenuScene, NetworkTest, TheTavern
-├── Scripts/                  All gameplay code
+├── Scenes/                   Hub, Ian'sTavern KevinVFXStuff, MainMenuScene, NetworkTest, TheTavern, LocalTesting/LocalTavern
+├── Scripts/                  All gameplay code (MainMenu/, Player/, EnemyScripts/, Rounds/)
 ├── Skyboxes/TavernSky/       Night sky skybox material + texture
 ├── TempForPitch/             Placeholder materials/textures used for the pitch build
-├── DefaultNetworkPrefabs.asset   ← NGO network prefab registry
-└── FinishedAttack.cs         Animator StateMachineBehaviour
+├── _Recovery/                Unity auto-recovery scenes (unused)
+└── DefaultNetworkPrefabs.asset   ← NGO network prefab registry
 ```
 
 
@@ -103,6 +107,8 @@ Assets/
 |---|---|---|
 | `com.unity.netcode.gameobjects` | 2.11.0 | All multiplayer |
 | `com.unity.multiplayer.center` | 1.0.1 | Multiplayer setup tooling |
+| `com.unity.services.multiplayer` | 2.4.0 | Unity Gaming Services auth + Relay (join codes) |
+| `com.unity.multiplayer.playmode` | 2.0.2 | Multiplayer Play Mode (virtual players in the editor) |
 | `com.unity.render-pipelines.universal` | 17.3.0 | URP rendering |
 | `com.unity.visualeffectgraph` | 17.3.0 | Projectile and portal VFX |
 | `com.unity.ai.navigation` | 2.0.10 | Enemy NavMesh pathfinding |
@@ -115,7 +121,7 @@ Assets/
 
 ## Networking
 
-We use **Netcode for GameObjects (NGO)** with a host-authoritative topology. One machine runs as **host** (server + client in the same process). The host owns all enemy spawning, enemy health, and round progression. Each connected client owns exactly one `Player1` instance and drives its own movement locally. Damage from a projectile is reported to the server via a `ServerRpc`, and the server mutates enemy HP and despawns the enemy when it dies.
+We use **Netcode for GameObjects (NGO)** with a host-authoritative topology. One machine runs as **host** (server + client in the same process). The host owns all enemy spawning, enemy health, and round progression. Each connected client owns exactly one `Player1` instance and drives its own movement locally. Firing and reloading are requested from the server via `ServerRpc`s. The server spawns the networked projectile, resolves hits, and changes enemy and player HP, which replicate to everyone through `NetworkVariable`s.
 
 
 
@@ -125,24 +131,26 @@ Set on the `NetworkManager` GameObject in [Assets/Scenes/NetworkTest.unity](Asse
 
 | Setting | Value | Notes |
 |---|---|---|
-| Transport | `UnityTransport` (UDP) | `m_ProtocolType: 0` = Unity Transport, not Relay |
-| Address / Port | `127.0.0.1` : `7777` | Localhost only — change for LAN/online testing |
-| Server listen address | `127.0.0.1` | **Must be changed to `0.0.0.0` to accept remote clients** |
+| Transport | `UnityTransport` | Relay server data is set at runtime by `NetworkStartButtons` (DTLS) |
+| Address / Port | `127.0.0.1` : `7777` | Only used for direct (non-Relay) connections, e.g. the NetworkManager inspector buttons |
+| Max joining players | 3 | `NetworkStartButtons.maxJoiningPlayers` (host + 3 = 4 characters) |
 | Tick Rate | 30 | Network ticks per second |
 | Player Prefab | `Prefabs/Player/Player1.prefab` | Auto-spawned per connected client |
 | `AutoSpawnPlayerPrefabClientSide` | true | You do not need to spawn players manually |
 | `EnableSceneManagement` | true | Server drives scene loads for clients |
-| Connection Approval | off | Anyone who can reach the port joins |
+| Connection Approval | off | Anyone with the join code can join |
 | Network Topology | ClientServer | Not distributed authority |
 
 
 
 ### Network Prefab Registry
 
-`Assets/DefaultNetworkPrefabs.asset` is the list NGO uses to match prefab hashes between server and client. It currently contains exactly two entries:
+`Assets/DefaultNetworkPrefabs.asset` is the list NGO uses to match prefab hashes between server and client. It currently contains four entries:
 
 1. `Prefabs/Player/Player1.prefab`
 2. `Prefabs/Enemies/EnemyTest.prefab`
+3. `Prefabs/Enemies/EnemyTest 2.prefab` (Sentinel enemy; this is the one `RoundSystem` spawns in `NetworkTest`)
+4. `Prefabs/Projectiles/TempProjectile1.prefab`
 
 > **Rule:** any prefab you intend to `Spawn()` over the network must have a `NetworkObject` component **and** be registered in this list. `ForceSamePrefabs` is enabled, so a prefab present on the host but missing on a client will cause the connection to error out rather than silently desync.
 
@@ -152,14 +160,18 @@ Set on the `NetworkManager` GameObject in [Assets/Scenes/NetworkTest.unity](Asse
 
 | Thing | Authority | Mechanism |
 |---|---|---|
-| Player movement & look | **Client (owner)** | `FirstPersonController` stops immediately if `!IsOwner` is true; a `NetworkTransform` on the prefab replicates the movement for other players (so everyone can see each other moving) |
+| Player movement & look | **Client (owner)** | `FirstPersonController` stops immediately if `!IsOwner` is true; an owner-authoritative `NetworkTransform` on the prefab replicates the movement for other players |
+| Player animations | **Owner → Server → everyone** | Owner sends walk/sprint/grounded via `ServerRpc`; server writes `NetworkVariable<bool>`s that every peer applies to the Animator |
+| Character assignment / model | **Server** | `CharacterAssignmentManager` writes `PlayerStatus.Character`; `PlayerModelAssignment` enables the matching model on every peer |
 | Player camera & audio listener | **Client (owner)** | Enabled only when `IsOwner` in `OnNetworkSpawn` |
-| Player HP | Server-side object, but currently mutated locally | `PlayerStatus.takeDamage` is a plain public method, rather than a Remote Procedure Call (RPC) |
+| Player HP | **Server** | `PlayerStatus.TakeDamage` → `ApplyDamageServerRpc` → `NetworkVariable<float> CurrentHP` |
 | Enemy spawning | **Server only** | `RoundSystem.OnNetworkSpawn` returns early unless `IsServer` |
-| Enemy HP / death | **Server** | `EnemyAITest.TakeDamageServerRpc` → `NetworkObject.Despawn()` |
+| Enemy AI / targeting | **Server** | `EnemyAITest.Update` only runs on the server; the `NavMeshAgent` is disabled on clients |
+| Enemy HP / death | **Server** | `EnemyAITest.ApplyDamage` → `NetworkVariable<float>` → `NetworkObject.Despawn()` |
 | Round progression | **Server** | `RoundSystem` counts despawns via `EnemyRoundTracker` |
-| Projectiles | **Local only** | Instantiated with plain `Instantiate`, not networked at all (players can't see each other's projectiles) |
-| Staffs / shops / UI | **Local only** | All plain `MonoBehaviour` |
+| Projectiles | **Server** | `StaffFireInput.FireStaffServerRpc` spawns a networked projectile; `ProjectileStats` handles hits and despawning on the server only |
+| Ammo / reload | **Server** | `StaffManager.ReloadStaffServerRpc` refills ammo on the server's copy of the staff |
+| Staff models / shops / UI | **Local only** | Plain `MonoBehaviour`s; `PlayerHealthUI` reads replicated `PlayerStatus` values |
 
 
 
@@ -194,49 +206,39 @@ public class MyThing : NetworkBehaviour
 
 Rules:
 
-1. **Use `OnNetworkSpawn()`, not `Start()`**, on any `NetworkBehaviour`. `Start()` can run before the object is spawned on the network, at which point `IsOwner` / `IsServer` are not yet meaningful (which is why we don't want to use it). `FirstPersonController`, `PlayerStatus`, `EnemyAITest`, and `RoundSystem` all do this correctly.
+1. **Use `OnNetworkSpawn()`, not `Start()`**, on any `NetworkBehaviour`. `Start()` can run before the object is spawned on the network, at which point `IsOwner` / `IsServer` are not yet meaningful (which is why we don't want to use it). `FirstPersonController`, `PlayerStatus`, `StaffManager`, `StaffFireInput`, `EnemyAITest`, `CharacterAssignmentManager`, `PlayerModelAssignment`, and `RoundSystem` all do this correctly.
 2. **Use `IsOwner` for player-specifc actions and `IsServer` for shared game state.** `IsOwner` means "this is my player." `IsServer` means "I am allowed to change shared game state." A client that runs server logic will either be ignored or cause a desync.
 3. **Follow the naming convention for RPCs.** A method marked with `[ServerRpc]` must end in `ServerRpc`, and a method marked with `[ClientRpc]` must end in `ClientRpc`. If a method is renamed and the suffix is lost, the project fails to compile.
 
-By default a `[ServerRpc]` can only be called by the object's **owner**. `EnemyAITest.TakeDamageServerRpc` is called from `ProjectileStats` on a client that does *not* own the enemy (the server does), so it will be rejected with an ownership warning. See [Known issues](#known-issues--WIP). The fix is `[ServerRpc(RequireOwnership = false)]`.
+By default a `[ServerRpc]` can only be called by the object's **owner**. Use `[ServerRpc(RequireOwnership = false)]` when a non-owner needs to call it, as `PlayerStatus.ApplyDamageServerRpc` (called by enemies) and `EnemyAITest.TakeDamageServerRpc` do.
 
 
 
 ### Transform Replication
 
-`Player1.prefab` uses Netcode's stock **`NetworkTransform`** with `AuthorityMode: 0` (**server authoritative**), `Interpolate` on, and full position/rotation/scale sync. This means the server is responsible for controlling and
-synchronizing the players' position and rotation. 
+`Player1.prefab` uses Netcode's stock **`NetworkTransform`** with `AuthorityMode: 1` (**owner authoritative**) and `Interpolate` on. The owning client moves its own Rigidbody in `FirstPersonController` and the transform is sent to everyone else, so the server and client no longer fight over the player's position. This replaced the old `ClientNetworkTransform` script, which has been deleted (NGO 2.x exposes the same behaviour through the `AuthorityMode` setting).
 
-There is also a **`ClientNetworkTransform`** in [Assets/Networking Stuff/ClientNetworkTransform.cs](Assets/Networking%20Stuff/ClientNetworkTransform.cs):
-
-```csharp
-public class ClientNetworkTransform : NetworkTransform
-{
-    protected override bool OnIsServerAuthoritative() => false;
-}
-```
-
-This changes the `NetworkTransform` so the **owning client** is responsible for its own transform and sends those changes to the other clients. This is a better approach for the first-person controller because `FirstPersonController` moves the player's Rigidbody locally on the owning client. However, `ClientNetworkTransform` **is not currently attached to `Player1.prefab`**, which still uses the server-authoritative `NetworkTransform`. Since `FirstPersonController` moves the Rigidbody locally on the owner, a server-authoritative transform will fight that movement and produce rubber-banding for non-host clients. Swapping the `NetworkTransform` for `ClientNetworkTransform` on `Player1.prefab` is the best fix available right now.
+The Sentinel enemy (`EnemyTest 2.prefab`) and the projectile (`TempProjectile1.prefab`) also have a `NetworkTransform`, so their movement replicates to clients.
 
 
 
 ### Adding a New Networked Object
 
 1. Add a **`NetworkObject`** component to the prefab root.
-2. If it moves, add **`NetworkTransform`** (server drives it) or **`ClientNetworkTransform`** (owner drives it).
+2. If it moves, add **`NetworkTransform`** and set its Authority Mode to **Server** (server drives it) or **Owner** (owning client drives it).
 3. Make its scripts extend **`NetworkBehaviour`** instead of `MonoBehaviour`.
 4. Register the prefab in **`Assets/DefaultNetworkPrefabs.asset`**.
 5. Spawn it **on the server only**: `Instantiate(prefab).GetComponent<NetworkObject>().Spawn();`
 6. Despawn it **on the server only**: `GetComponent<NetworkObject>().Despawn();`
 7. Test as host **and** as a second connected client.
 
-`RoundSystem.SpawnEnemy()` is the reference implementation of steps 5 and 6.
+`RoundSystem.SpawnEnemy()` and `StaffFireInput.FireStaffServerRpc()` are reference implementations of step 5, and `ProjectileStats.DespawnProjectile()` of step 6.
 
 
 
 ### Replicating State to Clients
 
-Nothing in the project currently uses `NetworkVariable<T>` or `[ClientRpc]`. Enemy HP, player HP, round number, and points are all local values. That's why health bars and round counters will not agree between players. When we wire up shared UI, the pattern to follow is:
+Shared state uses `NetworkVariable<T>` with server write permission. Current examples: `PlayerStatus.CurrentHP`, `PlayerStatus.Character`, `EnemyAITest.networkCurrentHP`, and the animation flags in `FirstPersonController`. Round number and points are still local values. When we wire up shared round UI, follow the same pattern:
 
 ```csharp
 // Server writes, everyone reads.
@@ -249,16 +251,15 @@ private NetworkVariable<int> currentRound = new NetworkVariable<int>(
 currentRound.OnValueChanged += (oldVal, newVal) => roundText.text = $"Round {newVal}";
 ```
 
-`RoundSystem` already exposes `GetCurrentRound()` and `GetEnemiesAlive()` as hooks for exactly this.
+Remember to unsubscribe from `OnValueChanged` in `OnNetworkDespawn`. `RoundSystem` already exposes `GetCurrentRound()` and `GetEnemiesAlive()` as hooks for this.
 
 
 
 ### Testing Remote Multiplayer
 
-1. On the host, change `ServerListenAddress` to `0.0.0.0` so the socket binds all interfaces.
-2. On clients, set `Address` to the host's LAN IP.
-3. Open UDP port `7777` in the host firewall.
-4. For play over the Internet, swap `UnityTransport`'s protocol to **Relay** and add Unity Gaming Services authentication. The `com.unity.multiplayer.center` package walks through this setup.
+Remote play uses **Unity Relay** through `NetworkStartButtons` (see the [Quick Start Guide](#quick-start-guide)). The host creates an allocation and shares the join code, and clients enter it to connect. No port forwarding or LAN IP is needed.
+
+For a direct connection without Relay (e.g. on the same LAN), you can still use the NetworkManager inspector buttons: set `ServerListenAddress` to `0.0.0.0` on the host, set `Address` to the host's LAN IP on clients, and open UDP port `7777` in the host firewall.
 
 ---
 
@@ -266,7 +267,7 @@ currentRound.OnValueChanged += (oldVal, newVal) => roundText.text = $"Round {new
 
 ## Script Reference
 
-All gameplay code lives in [Assets/Scripts/](Assets/Scripts/), except `FinishedAttack.cs` which sits at the `Assets/` root. Scripts marked **networked** extend `NetworkBehaviour`.
+All gameplay code lives in [Assets/Scripts/](Assets/Scripts/). Scripts marked **networked** extend `NetworkBehaviour`.
 
 
 
@@ -280,29 +281,53 @@ The current, multiplayer-ready first-person controller. Rigidbody-based.
 - `FixedUpdate` (owner only) runs ground check → look → movement → gravity/jump.
 - `DoGroundCheck` uses a **`SphereCast`** rather than a raycast because a raycast misses on ledges and can start inside geometry. Rejects surfaces steeper than `maxSlopeAngle` (60°).
 - Jump feel: **coyote time** (0.1s grace after leaving ground) and a **jump buffer** (0.1s of pre-press forgiveness). Gravity is applied manually, not via Rigidbody gravity.
+- Horizontal velocity is smoothed with `acceleration` / `deceleration` (`Vector3.MoveTowards`), so the player no longer slides after releasing input.
+- **Head bobbing** on the owner's camera in `LateUpdate`, scaled up while sprinting and eased back to rest when stopped.
+- **Networked animation:** finds the active character model's `Animator`, and the owner sends `Walking` / `Sprinting` / `Grounded` to the server only when they change. The server writes them to `NetworkVariable`s that all peers apply. The owner's own model is hidden so it doesn't block the camera.
+- Exposes a `PlayerCamera` property (used by `StaffFireInput` for aiming).
 - Locks and hides the cursor for the owner, restores it in `OnDisable`.
 
 
 
 #### [PlayerStatus.cs](Assets/Scripts/Player/PlayerStatus.cs): *networked*
-HP container. Sets `currentHP = maxHP` in `OnNetworkSpawn` and exposes `takeDamage(float)`. Intended to grow into the home for ammo/buffs/debuffs (whatever affects the player). Note that `takeDamage` is a plain method, so damage applied by an enemy currently only registers on whichever machine ran the enemy AI.
+Networked HP and character container.
+
+- `CurrentHP` (`NetworkVariable<float>`, server-write) is set to `maxHP` (100) by the server in `OnNetworkSpawn`.
+- `Character` (`NetworkVariable<CharacterType>`) holds which wizard this player is. On spawn the server asks `CharacterAssignmentManager` to assign one.
+- `TakeDamage(float)` forwards to `ApplyDamageServerRpc` (`RequireOwnership = false`, so enemies can call it), which clamps HP at 0.
+- `OnCharacterChanged` / `OnHealthChanged` hooks exist (currently debug logs) for future model/portrait reactions.
+
+
+
+#### [CharacterAssignmentManager.cs](Assets/Scripts/Player/CharacterAssignmentManager.cs): *networked*
+Server-only singleton (`Instance`) that also defines the `CharacterType` enum: `Unassigned`, `Hex`, `Cyrus`, `Snickerdoodle`, `Orion`. Tracks a `clientId → CharacterType` dictionary and gives each connecting client the first unused character in order. Listens to `OnClientConnectedCallback` / `OnClientDisconnectCallback` and frees a character when its player leaves. Logs a warning if a fifth player connects. Players can't pick their own character yet (TODO in code).
+
+
+
+#### [PlayerModelAssignment.cs](Assets/Scripts/Player/PlayerModelAssignment.cs): *networked*
+On the player prefab. Holds references to the four character models and enables only the one matching `PlayerStatus.Character`, re-applying whenever the value changes so every peer sees the right model.
+
+
+
+#### [PlayerHealthUI.cs](Assets/Scripts/Player/PlayerHealthUI.cs)
+Scene HUD (plain `MonoBehaviour`). Each frame it finds all `PlayerStatus` components, shows the **local** player's health bar and portrait in the top-left, and fills the bottom-left team list with each teammate's health (one row per character; rows are hidden for unused characters and for the local player).
 
 
 
 #### [PlayerController.cs](Assets/Scripts/PlayerController.cs): *legacy, single-player*
-The older `CharacterController`-based controller. **Not networked.** Handles movement with acceleration/deceleration smoothing, mouse look, head bobbing, and holds the player's health and points, including the TextMeshPro (TMP) HUD text and `AddPoints` / `SpendPoints` / `TakeDamage` API. `StaffShop` depends on this for the points economy, so it can't be deleted until points move onto `PlayerStatus`. Keep in mind that `Player1.prefab` uses `FirstPersonController`, not this. So **the shop's points system does not work on the networked player prefab**.
+The older `CharacterController`-based controller. **Not networked.** Used in `LocalTavern`. Handles movement with acceleration/deceleration smoothing, mouse look, head bobbing, drives `Walking` / `Sprinting` / `Grounded` Animator parameters, has a `K` debug key that damages the attached `PlayerStatus`, and holds the player's health and points, including the TextMeshPro (TMP) HUD text and `AddPoints` / `SpendPoints` / `TakeDamage` API. `StaffShop` depends on this for the points economy, so it can't be deleted until points move onto `PlayerStatus`. Keep in mind that `Player1.prefab` uses `FirstPersonController`, not this. So **the shop's points system does not work on the networked player prefab**.
 
 
 
 ### Staffs & Combat
 
-#### [StaffManager.cs](Assets/Scripts/StaffManager.cs)
-Two-slot staff inventory mounted on the player. Instantiates `starterStaffPrefab` under `weaponHoldPoint` at `Start`, handles slot switching (`1`, `2`, scroll wheel), fire input (`LMB` → `StaffController.Fire()`), reload (`R`), and exposes `AddStaffToSlot`, `ReplaceActiveStaff`, `RefillAmmoForStaff`, and `GetCurrentStaff`. Fires an `onStaffEquipped` event so other systems can react to a weapon swap. Slot switching works by toggling `SetActive` on the staff GameObjects.
+#### [StaffManager.cs](Assets/Scripts/StaffManager.cs): *networked*
+Two-slot staff inventory mounted on the player. Instantiates `starterStaffPrefab` under `weaponHoldPoint` in `OnNetworkSpawn` (on every peer, so everyone sees the staff). For the owner only, it handles slot switching (`1`, `2`, scroll wheel) and reload (`R` → `ReloadStaffServerRpc`, so ammo is refilled on the server's copy). It no longer handles firing. Exposes `AddStaffToSlot`, `ReplaceActiveStaff`, `RefillAmmoForStaff`, and `GetCurrentStaff`. Fires an `onStaffEquipped` event so other systems can react to a weapon swap. Slot switching works by toggling `SetActive` on the staff GameObjects.
 
 
 
 #### [StaffController.cs](Assets/Scripts/StaffController.cs)
-Per-staff behaviour: ammo, fire force, projectile prefab, and the TMP mana readout.
+Per-staff behaviour: ammo, fire force, projectile prefab, and the TMP mana readout. Its `Fire()` method is no longer called by anything, since firing now goes through `StaffFireInput`.
 
 - At `Start` it **unparents itself from the weapon hold point** and caches that transform, then in `LateUpdate` smoothly follows it with exponential position smoothing and rotational slerp. This produces the weapon-sway/lag feel instead of the staff being rigidly welded to the camera.
 - `Fire()` computes aim by raycasting from the **centre of the screen** (`Camera.main`), so the projectile converges on the crosshair rather than firing along the staff's laggy forward vector. Falls back to hold-point forward, then transform forward, if no camera is found.
@@ -310,13 +335,13 @@ Per-staff behaviour: ammo, fire force, projectile prefab, and the TMP mana reado
 
 
 
-#### [StaffFireInput.cs](Assets/Scripts/StaffFireInput.cs)
-A **second, parallel** fire path. Subscribes to `StaffManager.onStaffEquipped`, locates a child named `ProjectileOrigin` on the equipped staff, and on `LMB` instantiates a projectile from that point along `firePoint.forward`. Because `StaffManager.HandleInput` also fires on `LMB`, having both components active on the player means **each click fires twice and consumes two ammo**. We need to pick one path and remove the other (`StaffController.Fire()` is the more capable of the two).
+#### [StaffFireInput.cs](Assets/Scripts/StaffFireInput.cs): *networked*
+The single fire path. Subscribes to `StaffManager.onStaffEquipped` and locates a child named `ProjectileOrigin` on the equipped staff. On `LMB` (owner only) it raycasts from the centre of `playerCamera` to find the aim point, then calls `FireStaffServerRpc(position, direction)`. The server re-checks the staff and ammo, instantiates the projectile, calls `NetworkObject.Spawn()`, and sets its velocity (`fireForce` along the aim direction plus `upwardForce`).
 
 
 
 #### [ProjectileStats.cs](Assets/Scripts/ProjectileStats.cs)
-On the projectile prefab. On `OnTriggerEnter` with an object tagged `Enemy`, calls `EnemyAITest.TakeDamageServerRpc(damage)` and destroys itself 0.1s later. Also declares `pointsOnHit` / `pointsOnKill`, which isn't fully implemented yet.
+On the (networked) projectile prefab. Collision and lifetime run **on the server only**. On hitting an object tagged `Enemy` it damages the `EnemyAITest` and despawns itself. It also despawns after `lifetime` (10s) if it never hits anything. Despawning on the server removes it from every client. Also declares `pointsOnHit` / `pointsOnKill`, which isn't fully implemented yet.
 
 
 
@@ -333,12 +358,11 @@ In-world shop. Note the **file name and class name differ**--the component is `S
 ### Enemies
 
 #### [EnemyAITest.cs](Assets/Scripts/EnemyScripts/EnemyAITest.cs): *networked*
-In `OnNetworkSpawn` it grabs the `NavMeshAgent` and `Animator`, initialises HP, and auto-targets the first object tagged `Player`. Each `Update` it measures distance to the target. If the target is outside `AttackDistance`, it sets the destination to the player. If the target is inside `AttackDistance`, it halts and triggers the `Attack` animation, applying `AttackDamage` to the target's `PlayerStatus` exactly once per swing (gated by the `applyDamage` flag). `TakeDamageServerRpc` subtracts damage from the enemy HP, refreshes the health bar, and calls `NetworkObject.Despawn()` at zero HP.
+Server-driven enemy AI that supports multiple players. All logic runs on the server; clients disable their `NavMeshAgent` and just display the replicated transform and health.
 
-
-
-#### [FinishedAttack.cs](Assets/FinishedAttack.cs)
-An Animator `StateMachineBehaviour` attached to the enemy's attack state. On `OnStateExit` it sets `EnemyAITest.applyDamage = true`, which is what re-arms the enemy for its next hit. This prevents an enemy from dealing damage every frame it's in range.
+- Waits 2.5s after spawning, then every `targetRefInterval` (0.25s) retargets to the **closest living player** (ignoring dead/inactive players). Stops if there's no valid target.
+- Outside `AttackDistance` it chases with `SetDestination`. Inside, it stops and starts an `AttackTarget` coroutine: triggers the `Attack` animation, waits `AttackDelay`, re-checks that the target is alive and still in range, then calls `PlayerStatus.TakeDamage(AttackDamage)`. `attackCooldown` (1.5s) gates the next swing.
+- HP is a server-write `NetworkVariable<float>`, and every peer updates its health bar in `OnValueChanged`. `TakeDamageServerRpc` (`RequireOwnership = false`) and `ApplyDamage` clamp HP at 0 and despawn the enemy when it dies.
 
 
 
@@ -382,8 +406,34 @@ Sine-wave vertical bob for floating props. `RandomOffset` desynchronises multipl
 
 
 
-#### [MainMenuCamera.cs](Assets/Scripts/MainMenuCamera.cs)
-Idle camera sway for the main menu. Layered sine/cosine on both position and rotation at different speeds to avoid an obvious loop.
+### Main Menu
+
+Scripts in [Assets/Scripts/MainMenu/](Assets/Scripts/MainMenu/) for the book-style menu in `MainMenuScene`.
+
+#### [MainMenuController.cs](Assets/Scripts/MainMenu/MainMenuController.cs)
+Drives the menu. Moves/rotates the camera between anchors (Play, Tutorial, Credits, Settings, Quit, Main) with idle sway, slides the menu panel on screen after `introDelay`, opens the Settings/Credits/Quit pages, plays sub-menu sounds, animates the book, and handles the lobby/joining page. `Esc` returns from a sub-menu. Replaces the old `MainMenuCamera.cs`.
+
+
+
+#### [MainMenuButtonEffect.cs](Assets/Scripts/MainMenu/MainMenuButtonEffect.cs)
+Hover effect for menu buttons: scales up to `hoverScale` and plays `hoverSound` on pointer enter, then scales back on exit.
+
+
+
+#### [MenuMusicFade.cs](Assets/Scripts/MainMenu/MenuMusicFade.cs)
+Starts the menu music after `startDelay` and fades it up to `targetVolume` over `fadeTime`.
+
+
+
+#### [ConstantSpin.cs](Assets/Scripts/MainMenu/ConstantSpin.cs)
+Rotates an object at `rotationSpeed` degrees per second.
+
+
+
+### Networking UI
+
+#### [NetworkStartButtons.cs](Assets/Scripts/NetworkStartButtons.cs)
+Temporary `OnGUI` connection menu. Initializes Unity Services and signs in anonymously, then either creates a Relay allocation and starts the host (showing the join code; `C` copies it) or joins an existing allocation from an entered code. Shows connection status in the corner.
 
 ---
 
@@ -395,8 +445,10 @@ Idle camera sway for the main menu. Layered sine/cosine on both position and rot
 
 | Scene | Purpose | In Build |
 |---|---|---|
-| `Scenes/NetworkTest.unity` | **The multiplayer scene.** Contains the only `NetworkManager`, a `RoundSystem`, floors, a sphere, lighting | ✅ |
-| `Scenes/TheTavern.unity` | Tutorial level | ✅ |
+| `Scenes/NetworkTest.unity` | **The multiplayer scene.** Contains the only `NetworkManager`, `NetworkStartButtons`, `CharacterAssignmentManager`, a `RoundSystem`, Ian's tavern, and the health HUD | ✅ |
+| `Scenes/TheTavern.unity` | Tutorial level | ❌ (disabled) |
+| `Scenes/LocalTesting/LocalTavern.unity` | Non-networked tavern test scene | ❌ |
+| `Scenes/KevinVFXStuff.unity` | VFX sandbox | ❌ |
 | `Scenes/Hub.unity` | Hub area for creating a lobby before starting a level | ❌ |
 | `Scenes/Ian'sTavern.unity` | Tavern level (level 1) | ❌ |
 | `Scenes/MainMenuScene.unity` | Tavern main menu | ❌ |
@@ -407,17 +459,23 @@ Idle camera sway for the main menu. Layered sine/cosine on both position and rot
 
 | Prefab | Networked | Notes |
 |---|---|---|
-| `Prefabs/Player/Player1.prefab` | ✅ | `NetworkObject` + `NetworkTransform` + `FirstPersonController` + `PlayerStatus` + `StaffManager` + `StaffFireInput`. Children: `Camera`, `StaffHoldPoint`, `StaffFIrePoint` (note the typo in the object name) |
-| `Prefabs/Enemies/EnemyTest.prefab` | ✅ | `NetworkObject` + `EnemyAITest` + `NavMeshAgent` + `Animator` + world-space `Healthbar Canvas` with `TestHealthBar`. **No `NetworkTransform`**, so enemy movement does not replicate |
+| `Prefabs/Player/Player1.prefab` | ✅ | `NetworkObject` + owner-authoritative `NetworkTransform` + `FirstPersonController` + `PlayerStatus` + `PlayerModelAssignment` + `StaffManager` + `StaffFireInput`. Contains the four character models (Hex, Cyrus, Snickerdoodle, Orion). Children include `Camera`, `StaffHoldPoint`, `StaffFIrePoint` (note the typo in the object name). Uses the `NoFriction` physic material |
+| `Prefabs/Enemies/EnemyTest 2.prefab` | ✅ | **Sentinel** enemy spawned by `RoundSystem` in `NetworkTest`. `NetworkObject` + `NetworkTransform` + `EnemyAITest` + `NavMeshAgent` + `Animator` + health bar |
+| `Prefabs/Enemies/EnemyTest.prefab` | ✅ | Original skeleton test enemy. **No `NetworkTransform`**, so its movement does not replicate |
 | `Prefabs/Enemies/EnemySpawnerTest.prefab` | ❌ | Legacy non-networked spawner |
-| `Prefabs/Projectiles/TempProjectile1.prefab` | ❌ | Plain Rigidbody projectile, local only |
+| `Prefabs/Projectiles/TempProjectile1.prefab` | ✅ | `NetworkObject` + `NetworkTransform` + Rigidbody + `ProjectileStats`. Spawned by the server |
+| `Prefabs/Projectiles/Snowflake.prefab` | ❌ | Ice projectile visual |
 | `Prefabs/VFX/Basic_Projectile.prefab` | ❌ | VFX-driven projectile |
 
 
 
 ### Staff Prefabs
 
-`DarkStaff`, `DefaultStaff`, `ElectricStaff`, `FireStaff`, `GravityStaff`, `IceStaff`, `LightStaff`, `RockStaff`, `ShatteredStaff`, `Temp2`. These are all in `Prefabs/Staffs/`, none are networked. Staffs are currently cosmetic + local-fire only.
+Base: `BaseStaff`, `DefaultStaff/`, `ElectricStaff`, `GravityStaff`, `HealthStaff`, `IceStaff`, `LightStaff/`, `NecromancerStaff`, `SandStaff`, `ShatteredStaff`, `TimeStaff`, `UndeadStaff`, `Temp2`.
+
+Upgraded: `UpgradedDarkStaff`, `UpgradedElectricStaff`, `UpgradedGravityStaff`, `UpgradedIceStaff`, `UpgradedSandStaff`, `UpgradedShatteredStaff`, `UpgradedStoneStaff`, `UpgradedUndeadStaff`.
+
+These are all in `Prefabs/Staffs/`. The staffs themselves aren't networked: the player's `StaffManager` spawns them locally on every peer, and their projectiles are spawned by the server.
 
 
 
@@ -451,7 +509,7 @@ Base staff, Dark, Default (wooden), Electric, Gravity, Health, Light, Necromance
 - **Level 3 — Castle:** guillotine
 - **Modular kit:** town gate, bridge, wall pieces (4 + big wall + cross/triangle patterns), flag, wooden arc, clock tower, 3 door types, furniture (bookshelf, desk, cabinet), 5 towers, 4 vases, 5 window types, roof tile, stone arch, water wheel, 10 vendor-shop pieces, and an outdoor set (bell, benches, bulletin board, fences & gates, fountains, garbage bin, ladder, lanterns, sign hangers, lamps, planter, wagon, water tower, well, wheelbarrows)
 - **The Hub:** practice target, 2 training dummies
-- **Characters:** `Hex.fbx` (single placeholder character)
+- **Characters:** Hex, Cyrus, Snickerdoodle, and Orion models with animations, plus character portraits used by the health HUD
 
 Texture convention across the models: each model ships alongside `*_Color.png`, `*_Normal.png`, `*_Roughness.png`, and sometimes `*_Emission.png`.
 
@@ -461,19 +519,16 @@ Texture convention across the models: each model ships alongside `*_Color.png`, 
 
 ## Known Issues / WIP
 
-1. **`Player1.prefab` has the wrong transform component.** It uses server-authoritative `NetworkTransform` while `FirstPersonController` moves the Rigidbody client-side. `ClientNetworkTransform` exists precisely for this and isn't wired up. Expect rubber-banding on non-host clients until it's swapped.
-2. **`TakeDamageServerRpc` will be rejected for non-owners.** `ServerRpc` defaults to `RequireOwnership = true`, but `ProjectileStats` calls it from a client that doesn't own the enemy. It needs `[ServerRpc(RequireOwnership = false)]`.
-3. **Projectiles aren't networked.** They're locally instantiated, so remote players never see each other's shots. Making them `NetworkObject`s (or, cheaper, spawning them visually via a `ClientRpc` and keeping hit detection server-side) is a combat milestone.
-4. **Double-fire on the player prefab.** Both `StaffManager` and `StaffFireInput` listen for `LMB` and both spawn a projectile. Remove one.
-5. **Two player controllers, split responsibilities.** `PlayerController` (legacy, non-networked) owns health/points/HUD and is what `StaffShop` talks to. `FirstPersonController` (networked) is what's actually on the prefab. Points and health need to migrate onto `PlayerStatus` for the shop to work in multiplayer.
-6. **`EnemyTest.prefab` has no `NetworkTransform`.** Enemies pathfind on the server, but clients won't see them move.
-7. **No shared state replication.** No `NetworkVariable` or `ClientRpc` anywhere. Enemy HP, player HP, round number, and points are all machine-local and will disagree between peers.
-8. **`PlayerStatus.takeDamage` isn't an RPC**, so enemy damage doesn't propagate.
-9. **No connection UI.** Host/join is inspector-button only.
-10. **Localhost-locked transport.** `ServerListenAddress` is `127.0.0.1`. Remote clients cannot connect without changing it.
-11. **`StaffShop` polls every frame** using `FindGameObjectWithTag` plus bounds containment rather than using `OnTriggerEnter`/`Exit`. It also assumes a single player tagged `Player`, which breaks in multiplayer.
-12. **`EnemySpawnerTest` counts in frames, not seconds** (`spawnTimer++` in `Update`), so its spawn rate is framerate-dependent. Superseded by `RoundSystem`.
-13. **Duplicate fountain assets** exist at both `Models/OutDoors/Fountain/` and `Models/ModularAssets/OutDoors/Foutine/` (note the misspelling).
-14. **Naming inconsistencies to be aware of:** `StaffStore.cs` declares class `StaffShop`. The player prefab child is named `StaffFIrePoint`. `Assets/FinishedAttack.cs` sits outside `Scripts/`. The folder `Networking Stuff/` contains a space, which is awkward in shell paths.
-15. **`Extras/TutorialInfo/`** is a leftover Unity template and can be deleted.
-16. **Input System package is installed but unused**. All gameplay reads legacy `Input.GetAxis` / `Input.GetKey`. Migrating would also make controller support (which `FirstPersonController` was written with in mind) straightforward.
+1. **Two player controllers, split responsibilities.** `PlayerController` (legacy, non-networked) owns points/HUD and is what `StaffShop` talks to. `FirstPersonController` (networked) is what's actually on the prefab. Points need to migrate onto `PlayerStatus` for the shop to work in multiplayer.
+2. **`StaffShop` isn't multiplayer-ready.** It polls every frame using `FindGameObjectWithTag` plus bounds containment rather than `OnTriggerEnter`/`Exit`, assumes a single player tagged `Player`, and spends points through `PlayerController`.
+3. **Round number and points aren't replicated.** Player HP, enemy HP, characters, and animations now use `NetworkVariable`s, but `RoundSystem`'s round count and the points economy are still machine-local.
+4. **Staff switching isn't replicated.** Each peer spawns the starter staff locally, but slot switches and shop purchases only happen on the owner, so other players won't see a staff change. The server's ammo count and the owner's mana UI can also drift apart.
+5. **Characters are auto-assigned.** `CharacterAssignmentManager` hands out characters in order. There's no character select yet, and a fifth player gets no character.
+6. **Connection UI is a temporary `OnGUI` overlay.** It should move into the main menu's lobby page. Relay also requires the project to be linked to Unity Cloud.
+7. **`EnemyTest.prefab` (skeleton) has no `NetworkTransform`.** Only the Sentinel (`EnemyTest 2`) replicates movement.
+8. **Stale Build Settings entry.** `Assets/Scenes/NetworkTavern.unity` is listed (disabled) but doesn't exist.
+9. **`EnemySpawnerTest` counts in frames, not seconds** (`spawnTimer++` in `Update`), so its spawn rate is framerate-dependent. Superseded by `RoundSystem`.
+10. **`StaffController.Fire()` is dead code** now that `StaffFireInput` handles firing.
+11. **Naming inconsistencies to be aware of:** `StaffStore.cs` declares class `StaffShop`. The player prefab child is named `StaffFIrePoint`.
+12. **Leftover folders:** `Extras/TutorialInfo/` (Unity template) and `_Recovery/` (auto-recovery scenes) can be deleted.
+13. **Input System package is installed but unused**. All gameplay reads legacy `Input.GetAxis` / `Input.GetKey`. Migrating would also make controller support (which `FirstPersonController` was written with in mind) straightforward.
