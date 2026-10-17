@@ -2012,8 +2012,8 @@ MonoBehaviour:
   maxLookAngle: 65
   moveSpeed: 5
   sprintSpeed: 8
-  acceleration: 12
-  deceleration: 20
+  acceleration: 25
+  deceleration: 25
   bobFrequency: 12
   bobAmplitude: 0.05
   sprintBobMultiplier: 1.25
