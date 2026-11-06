@@ -13,6 +13,13 @@ public class StaffManager : NetworkBehaviour
     // notifies StaffFireInput when the equipped staff changes
     public event Action<GameObject> onStaffEquipped;
 
+    // ammo count
+    public NetworkVariable<int> CurrentAmmo = new NetworkVariable<int>(
+    30,
+    NetworkVariableReadPermission.Everyone,
+    NetworkVariableWritePermission.Server
+);
+
     public override void OnNetworkSpawn()
     {
         if (weaponHoldPoint == null)
