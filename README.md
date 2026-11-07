@@ -461,19 +461,9 @@ Texture convention across the models: each model ships alongside `*_Color.png`, 
 
 ## Known Issues / WIP
 
-1. **`Player1.prefab` has the wrong transform component.** It uses server-authoritative `NetworkTransform` while `FirstPersonController` moves the Rigidbody client-side. `ClientNetworkTransform` exists precisely for this and isn't wired up. Expect rubber-banding on non-host clients until it's swapped.
-2. **`TakeDamageServerRpc` will be rejected for non-owners.** `ServerRpc` defaults to `RequireOwnership = true`, but `ProjectileStats` calls it from a client that doesn't own the enemy. It needs `[ServerRpc(RequireOwnership = false)]`.
-3. **Projectiles aren't networked.** They're locally instantiated, so remote players never see each other's shots. Making them `NetworkObject`s (or, cheaper, spawning them visually via a `ClientRpc` and keeping hit detection server-side) is a combat milestone.
-4. **Double-fire on the player prefab.** Both `StaffManager` and `StaffFireInput` listen for `LMB` and both spawn a projectile. Remove one.
-5. **Two player controllers, split responsibilities.** `PlayerController` (legacy, non-networked) owns health/points/HUD and is what `StaffShop` talks to. `FirstPersonController` (networked) is what's actually on the prefab. Points and health need to migrate onto `PlayerStatus` for the shop to work in multiplayer.
-6. **`EnemyTest.prefab` has no `NetworkTransform`.** Enemies pathfind on the server, but clients won't see them move.
-7. **No shared state replication.** No `NetworkVariable` or `ClientRpc` anywhere. Enemy HP, player HP, round number, and points are all machine-local and will disagree between peers.
-8. **`PlayerStatus.takeDamage` isn't an RPC**, so enemy damage doesn't propagate.
-9. **No connection UI.** Host/join is inspector-button only.
-10. **Localhost-locked transport.** `ServerListenAddress` is `127.0.0.1`. Remote clients cannot connect without changing it.
-11. **`StaffShop` polls every frame** using `FindGameObjectWithTag` plus bounds containment rather than using `OnTriggerEnter`/`Exit`. It also assumes a single player tagged `Player`, which breaks in multiplayer.
-12. **`EnemySpawnerTest` counts in frames, not seconds** (`spawnTimer++` in `Update`), so its spawn rate is framerate-dependent. Superseded by `RoundSystem`.
-13. **Duplicate fountain assets** exist at both `Models/OutDoors/Fountain/` and `Models/ModularAssets/OutDoors/Foutine/` (note the misspelling).
-14. **Naming inconsistencies to be aware of:** `StaffStore.cs` declares class `StaffShop`. The player prefab child is named `StaffFIrePoint`. `Assets/FinishedAttack.cs` sits outside `Scripts/`. The folder `Networking Stuff/` contains a space, which is awkward in shell paths.
-15. **`Extras/TutorialInfo/`** is a leftover Unity template and can be deleted.
-16. **Input System package is installed but unused**. All gameplay reads legacy `Input.GetAxis` / `Input.GetKey`. Migrating would also make controller support (which `FirstPersonController` was written with in mind) straightforward.
+1. **Two player controllers, split responsibilities.** `PlayerController` (legacy, non-networked) owns health/points/HUD and is what `StaffShop` talks to. `FirstPersonController` (networked) is what's actually on the prefab. Points and health need to migrate onto `PlayerStatus` for the shop to work in multiplayer.
+2. **`StaffShop` polls every frame** using `FindGameObjectWithTag` plus bounds containment rather than using `OnTriggerEnter`/`Exit`. It also assumes a single player tagged `Player`, which breaks in multiplayer.
+3. **Duplicate fountain assets** exist at both `Models/OutDoors/Fountain/` and `Models/ModularAssets/OutDoors/Foutine/` (note the misspelling).
+4. **Naming inconsistencies to be aware of:** `StaffStore.cs` declares class `StaffShop`. The player prefab child is named `StaffFIrePoint`. `Assets/FinishedAttack.cs` sits outside `Scripts/`. The folder `Networking Stuff/` contains a space, which is awkward in shell paths.
+5. **`Extras/TutorialInfo/`** is a leftover Unity template and can be deleted.
+6. **Input System package is installed but unused**. All gameplay reads legacy `Input.GetAxis` / `Input.GetKey`. Migrating would also make controller support (which `FirstPersonController` was written with in mind) straightforward.
