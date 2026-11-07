@@ -1,6 +1,11 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Prefabs/Staffs/HealthStaff.prefab.meta
 guid: b4aab1a19d498954aac2bcae09822e11
 PrefabImporter:
+========
+guid: 1992b972ee6e361498f808b5ec2e5470
+DefaultImporter:
+>>>>>>>> 75f136f046a3dd7f88d8cf51103554404999ca79:Assets/Models/MMBook/Page/MainMenuPage_Play.pdn.meta
   externalObjects: {}
   userData: 
   assetBundleName: 

@@ -1,7 +1,8 @@
 using UnityEngine;
 using System;
+using Unity.Netcode;
 
-public class StaffManager : MonoBehaviour
+public class StaffManager : NetworkBehaviour
 {
     [Header("Staff Settings")]
     public GameObject starterStaffPrefab;
@@ -9,52 +10,57 @@ public class StaffManager : MonoBehaviour
     public GameObject[] staffSlots = new GameObject[2];
     private int currentSlot = 0;
 
+    // notifies StaffFireInput when the equipped staff changes
     public event Action<GameObject> onStaffEquipped;
 
-    void Start()
-    {
-        // Equip the starter staff in slot 0
-        GameObject starter = Instantiate(starterStaffPrefab, weaponHoldPoint);
-        starter.transform.localPosition = Vector3.zero;
-        starter.transform.localRotation = Quaternion.identity;
+    // ammo count
+    public NetworkVariable<int> CurrentAmmo = new NetworkVariable<int>(
+    30,
+    NetworkVariableReadPermission.Everyone,
+    NetworkVariableWritePermission.Server
+);
 
-        staffSlots[0] = starter;
+    public override void OnNetworkSpawn()
+    {
+        if (weaponHoldPoint == null)
+            return;
+
+        // equip the starter (base) staff in slot 0 if there is no staff already in slot 0
+        if (staffSlots[0] == null && starterStaffPrefab != null)
+        {
+            GameObject starter = Instantiate(starterStaffPrefab, weaponHoldPoint);
+            starter.transform.localPosition = Vector3.zero;
+            starter.transform.localRotation = Quaternion.identity;
+
+            staffSlots[0] = starter;
+        }
+
         EquipStaff(0);
     }
 
     void Update()
     {
+        if (!IsSpawned || !IsOwner)
+            return;
+
         HandleInput();
     }
 
     void HandleInput()
     {
-        // Fire current staff
-        if (Input.GetMouseButtonDown(0))
-        {
-            StaffController staff = GetCurrentStaff();
-            if (staff != null)
-                staff.Fire();
-        }
-
-        // Reload current staff with R
+        // reload currently equipped staff with 'R'
         if (Input.GetKeyDown(KeyCode.R))
         {
-            StaffController staff = GetCurrentStaff();
-            if (staff != null)
-            {
-                staff.RefillAmmo();
-                Debug.Log("Reloaded staff: " + staff.gameObject.name);
-            }
+            ReloadStaffServerRpc();
         }
 
-        // Switch staff using 1 and 2
+        // switch between staffs using '1' and '2'
         if (Input.GetKeyDown(KeyCode.Alpha1))
             EquipStaff(0);
         else if (Input.GetKeyDown(KeyCode.Alpha2))
             EquipStaff(1);
 
-        // Scroll wheel
+        // or switch using the scroll wheel
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (scroll > 0f)
             ScrollStaff(-1);
@@ -62,19 +68,41 @@ public class StaffManager : MonoBehaviour
             ScrollStaff(1);
     }
 
+    // runs on the server when the owner requests a reload
+    [ServerRpc]
+    void ReloadStaffServerRpc(ServerRpcParams rpcParams = default)
+    {
+        // get the staff belonging to the player who requested the reload
+        StaffController staff = GetCurrentStaff();
+
+        if (staff == null)
+            return;
+        
+        staff.RefillAmmo(); // reload staff locally
+        CurrentAmmo.Value = staff.ammo; // reload staff globally
+    }
+
+    // handles scrolling to switch staffs
     void ScrollStaff(int direction)
     {
         int newSlot = currentSlot + direction;
-        if (newSlot < 0) newSlot = staffSlots.Length - 1;
-        if (newSlot >= staffSlots.Length) newSlot = 0;
+        if (newSlot < 0)
+            newSlot = staffSlots.Length - 1; // wrap around when you go past the start or end of the staff inventory
+
+        if (newSlot >= staffSlots.Length)
+            newSlot = 0;
 
         EquipStaff(newSlot);
     }
 
+    // handles switching between staffs
     void EquipStaff(int slotIndex)
     {
-        if (slotIndex < 0 || slotIndex >= staffSlots.Length) return;
-        if (staffSlots[slotIndex] == null) return;
+        if (slotIndex < 0 || slotIndex >= staffSlots.Length)
+            return;
+
+        if (staffSlots[slotIndex] == null)
+            return;
 
         for (int i = 0; i < staffSlots.Length; i++)
         {
@@ -84,59 +112,85 @@ public class StaffManager : MonoBehaviour
 
         currentSlot = slotIndex;
 
-        // Fire event to notify listeners about the newly equipped staff
+        // fire event to notify listeners about the newly equipped staff
+        // so it can update its firing point
         onStaffEquipped?.Invoke(staffSlots[slotIndex]);
     }
 
+    // getter to get the currently equipped staff
     public StaffController GetCurrentStaff()
     {
-        if (staffSlots[currentSlot] == null) return null;
+        if (currentSlot < 0 || currentSlot >= staffSlots.Length)
+            return null;
+
+        if (staffSlots[currentSlot] == null)
+            return null;
+
         return staffSlots[currentSlot].GetComponent<StaffController>();
     }
 
+    // getter to count the inventory slots that contain a staff
     public int GetStaffCount()
     {
         int count = 0;
+
         foreach (var staff in staffSlots)
         {
-            if (staff != null) count++;
+            if (staff != null)
+                count++;
         }
+
         return count;
     }
 
+    // handles adding a staff to the player's inventory
     public void AddStaffToSlot(int slotIndex, GameObject newStaffPrefab)
     {
-        if (slotIndex < 0 || slotIndex >= staffSlots.Length) return;
+        if (slotIndex < 0 || slotIndex >= staffSlots.Length)
+            return;
 
         if (staffSlots[slotIndex] != null)
         {
-            Destroy(staffSlots[slotIndex]);
+            Destroy(staffSlots[slotIndex]); // remove the old staff
         }
 
+        // create the new staff as a child of the hold point
         GameObject newStaff = Instantiate(newStaffPrefab, weaponHoldPoint);
         newStaff.transform.localPosition = Vector3.zero;
         newStaff.transform.localRotation = Quaternion.identity;
         newStaff.SetActive(false);
+
         staffSlots[slotIndex] = newStaff;
     }
 
+    // handles replacing the currently equipped staff
     public void ReplaceActiveStaff(GameObject newStaffPrefab)
     {
         AddStaffToSlot(currentSlot, newStaffPrefab);
         EquipStaff(currentSlot);
     }
 
+    // handles refilling ammo
     public void RefillAmmoForStaff(GameObject staffPrefab)
     {
+        // only the server should modify ammo
+        if (!IsServer || staffPrefab == null)
+            return;
+
         foreach (GameObject staff in staffSlots)
         {
             if (staff != null && staff.name.Contains(staffPrefab.name))
             {
                 StaffController controller = staff.GetComponent<StaffController>();
+
                 if (controller != null)
                 {
                     controller.RefillAmmo();
-                    Debug.Log("Ammo refilled for staff: " + staff.name);
+
+                    if (staff == staffSlots[currentSlot])
+                    {
+                        CurrentAmmo.Value = controller.ammo;
+                    }
                 }
             }
         }

@@ -1,10 +1,12 @@
 using Unity.Netcode;
 using UnityEngine;
 
-//I learnt this command that stops Unity from accidentally assigning multiple controllers to the same Gameobject. Mostly for bug prevention but could save some headaches once we start to have multiple instances of players in game.
+//Command that stops Unity from accidentally assigning multiple controllers to the same Gameobject
+//Mostly for bug prevention but could save some headaches once we start to have multiple instances of players in game
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
+
 public class FirstPersonController : NetworkBehaviour
 {
     [Header("References")]
@@ -13,10 +15,19 @@ public class FirstPersonController : NetworkBehaviour
 
     [Header("Movement")]
     [SerializeField] private float mouseSensitivity = 2f;
-    //This stops the player from looking directly down. It will help with clipping issues once we have models imported.
-    [SerializeField] private float maxLookAngle = 85f;
+    [SerializeField] private float maxLookAngle = 85f; //This stops the player from looking directly down. It will help with clipping issues once we have models imported.
     [SerializeField] private float moveSpeed = 12f;
     [SerializeField] private float sprintSpeed = 20f;
+
+    [Header("Movement Smoothing")]
+    [SerializeField] private float acceleration = 12f;
+    [SerializeField] private float deceleration = 10f;
+
+    [Header("Head Bobbing")]
+    [SerializeField] private float bobFrequency = 6f;
+    [SerializeField] private float bobAmplitude = 0.05f;
+    [SerializeField] private float sprintBobMultiplier = 1.5f;
+    [SerializeField] private float bobReturnSpeed = 10f;
 
     [Header("Jump")]
     //This messes with how strong our jumps are. We can make the player jump higher with jumpVelocity, and gravity changes how fast they come back down.
@@ -29,26 +40,65 @@ public class FirstPersonController : NetworkBehaviour
     [SerializeField] private float coyoteTime = 0.1f;
     [SerializeField] private float jumpBufferTime = 0.1f;
 
-    //Rigidbody settings.
-    private float maxSlopeAngle = 60f;
+    [Header("Physics")]
+    [SerializeField] private float maxSlopeAngle = 60f;
 
     private Rigidbody rb;
     private CapsuleCollider capsule;
 
-    //floats for camera movement. Pitch is up and down and Yaw is left and right.
+    //Floats for camera movement. Pitch is up and down and Yaw is left and right.
     private float pitch;
     private float yaw;
 
     //Because I am using moveInput, we should be able to naturally convert controller input into this as well.
     private Vector2 moveInput;
     private bool sprintHeld;
-
+    private bool isMoving;
     private bool isGrounded;
     private Vector3 groundNormal = Vector3.up;
 
     //lastGroundedTime is for Coyote Time, and lastJumpPressedTime prevents jump spam (mostly so we prevent bhopping and our game doesn't play like Quake).
     private float lastGroundedTime;
     private float lastJumpPressedTime;
+
+    //Head bob state
+    private float bobTimer;
+    private Vector3 cameraInitialLocalPosition;
+
+    // networked animation states
+    public Animator animator;
+
+    private NetworkVariable<bool> networkWalking = new NetworkVariable<bool>(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    private NetworkVariable<bool> networkSprinting = new NetworkVariable<bool>(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    private NetworkVariable<bool> networkGrounded = new NetworkVariable<bool>(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    // stores last states sent to the server so ServerRpc isn't sent when there are no state changes
+    private bool lastWalk;
+    private bool lastSprint;
+    private bool lastGround;
+
+    public Camera PlayerCamera
+    {
+        get
+        {
+            if (playerCamera == null)
+                return null;
+
+            return playerCamera.GetComponent<Camera>();
+        }
+    }
+
 
     //This is the Start() method used for networking objects. We are spawning in this gameobject when the network is created.
     public override void OnNetworkSpawn()
@@ -69,7 +119,7 @@ public class FirstPersonController : NetworkBehaviour
         //Make sure the player has a camera on it.
         if (playerCamera == null)
         {
-            var cam = GetComponentInChildren<Camera>(true);
+            Camera cam = GetComponentInChildren<Camera>(true);
             if (cam != null) playerCamera = cam.transform;
         }
 
@@ -80,8 +130,9 @@ public class FirstPersonController : NetworkBehaviour
         //Assign
         if (playerCamera != null)
         {
-            var cam = playerCamera.GetComponent<Camera>();
+            Camera cam = playerCamera.GetComponent<Camera>();
             if (cam != null) cam.enabled = IsOwner;
+            cameraInitialLocalPosition = playerCamera.localPosition;
         }
 
         //Assign
@@ -94,7 +145,30 @@ public class FirstPersonController : NetworkBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
+
+        HideOwnModel();
+
+        // listen for animation updates from the server
+        networkWalking.OnValueChanged += OnNetworkAnimationChanged;
+        networkSprinting.OnValueChanged += OnNetworkAnimationChanged;
+        networkGrounded.OnValueChanged += OnNetworkAnimationChanged;
+
+        // find the current character model's Animator
+        RefreshAnimator();
+        ApplyAnimatorParameters(networkWalking.Value, networkSprinting.Value, networkGrounded.Value);
     }
+
+
+    public override void OnNetworkDespawn()
+    {
+        // stop listening for animation updates
+        networkWalking.OnValueChanged -= OnNetworkAnimationChanged;
+        networkSprinting.OnValueChanged -= OnNetworkAnimationChanged;
+        networkGrounded.OnValueChanged -= OnNetworkAnimationChanged;
+
+        base.OnNetworkDespawn();
+    }
+
 
     private void OnDisable()
     {
@@ -106,11 +180,13 @@ public class FirstPersonController : NetworkBehaviour
         }
     }
 
+
     private void Update()
     {
-        //Grabs inputs
-        if (!IsOwner) return;
+        if (!IsSpawned || !IsOwner) return;
 
+        RefreshAnimator();
+ 
         float mx = Input.GetAxisRaw("Mouse X") * mouseSensitivity;
         float my = Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
 
@@ -125,15 +201,37 @@ public class FirstPersonController : NetworkBehaviour
             lastJumpPressedTime = Time.time;
     }
 
+
     private void FixedUpdate()
     {
-        if (!IsOwner) return;
+        if (!IsSpawned || !IsOwner) return;
         //This moves the player every frame.
         DoGroundCheck();
         ApplyLook();
         ApplyMovement();
         ApplyGravityAndJump();
+
+        //update the local animations immediately and synchronize with other players
+        UpdateAnimationState();
     }
+
+
+    private void LateUpdate()
+    {
+        if (!IsSpawned)
+            return;
+
+        RefreshAnimator();
+
+        if (!IsOwner)
+        {
+            ApplyAnimatorParameters(networkWalking.Value, networkSprinting.Value, networkGrounded.Value);
+            return;
+        }
+
+        HandleHeadBobbing();
+    }
+
 
     //This checks if the player is touching the ground, and allows them to jump if able.
     private void DoGroundCheck()
@@ -173,6 +271,7 @@ public class FirstPersonController : NetworkBehaviour
         rb.linearDamping = 0f;
     }
 
+
     private void ApplyLook()
     {
         rb.MoveRotation(Quaternion.Euler(0f, yaw, 0f));
@@ -180,6 +279,7 @@ public class FirstPersonController : NetworkBehaviour
         if (playerCamera != null)
             playerCamera.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
+
 
     private void ApplyMovement()
     {
@@ -194,10 +294,14 @@ public class FirstPersonController : NetworkBehaviour
             wishDir = Vector3.ProjectOnPlane(wishDir, groundNormal).normalized;
 
         Vector3 v = rb.linearVelocity;
-        Vector3 horizontal = wishDir * speed;
+        Vector3 wishHorizontal = wishDir * speed;
+        Vector3 curHorizontal = new Vector3(v.x, 0f, v.z);
+        float smoothingRate = inputDir.sqrMagnitude > 0.01f ? acceleration : deceleration;
+        Vector3 smoothedHorizontal = Vector3.MoveTowards(curHorizontal, wishHorizontal, smoothingRate * Time.fixedDeltaTime);
 
-        rb.linearVelocity = new Vector3(horizontal.x, v.y, horizontal.z);
+        rb.linearVelocity = new Vector3(smoothedHorizontal.x, v.y, smoothedHorizontal.z);
     }
+
 
     private void ApplyGravityAndJump()
     {
@@ -220,5 +324,128 @@ public class FirstPersonController : NetworkBehaviour
         }
 
         rb.linearVelocity = v;
+    }
+
+
+    private void HandleHeadBobbing()
+    {
+        Vector3 v = rb.linearVelocity;
+        float horizontalSpeed = new Vector2(v.x, v.z).magnitude;
+        isMoving = horizontalSpeed > 0.1f && isGrounded;
+        Vector3 targetCameraPosition = cameraInitialLocalPosition;
+
+        // apply head bobbing if the player is mmoving
+        if (isMoving)
+        {
+            float speedMultiplier = sprintHeld ? sprintBobMultiplier : 1f;
+            bobTimer += Time.deltaTime * bobFrequency * speedMultiplier;
+
+            float bobOffset = Mathf.Sin(bobTimer) * bobAmplitude * speedMultiplier;
+            targetCameraPosition = cameraInitialLocalPosition + new Vector3(0f, bobOffset, 0f);
+        }
+        else
+        {
+            bobTimer = 0f;
+        }
+        // smoothly return the camera to its normal height when the player stops walking/sprinting
+        playerCamera.localPosition = Vector3.Lerp(
+            playerCamera.localPosition,
+            targetCameraPosition,
+            bobReturnSpeed * Time.deltaTime
+        );
+    }
+
+
+    // finds the Animator on the current character model
+    private void RefreshAnimator()
+    {
+        Animator[] childAnimators = GetComponentsInChildren<Animator>(true);
+        Animator activeAnimator = null;
+
+        foreach (Animator childAnimator in childAnimators)
+        {
+            if (childAnimator != null && childAnimator.enabled && childAnimator.gameObject.activeInHierarchy)
+            {
+                activeAnimator = childAnimator;
+                break;
+            }
+        }
+        animator = activeAnimator;
+    }
+
+
+    // updates the animator state for the local player
+    private void UpdateAnimationState()
+    {
+        Vector3 v = rb.linearVelocity;
+        float horizontalSpeed = new Vector2(v.x, v.z).magnitude;
+        isMoving = horizontalSpeed > 0.1f && isGrounded;
+
+        ApplyAnimatorParameters(isMoving, sprintHeld, isGrounded);
+
+        // only send an update when an animation state changes
+        if (isMoving == lastWalk &&
+            sprintHeld == lastSprint &&
+            isGrounded == lastGround)
+        {
+            return;
+        }
+
+        lastWalk = isMoving;
+        lastSprint = sprintHeld;
+        lastGround = isGrounded;
+
+        SetAnimationStateServerRpc(isMoving, sprintHeld, isGrounded); // send state changes to other clients
+    }
+
+
+    [ServerRpc]
+    private void SetAnimationStateServerRpc(bool walking, bool sprinting, bool grounded)
+    {
+        Debug.Log(
+        $"[Server] Player {OwnerClientId}: " +
+        $"Walking={walking}, " +
+        $"Sprinting={sprinting}, " +
+        $"Grounded={grounded}"
+        );
+
+        networkWalking.Value = walking;
+        networkSprinting.Value = sprinting;
+        networkGrounded.Value = grounded;
+    }
+
+
+    // called when an animation state changes
+    private void OnNetworkAnimationChanged(bool previousValue, bool newValue)
+    {
+        ApplyAnimatorParameters(networkWalking.Value, networkSprinting.Value, networkGrounded.Value);
+    }
+
+
+    private void ApplyAnimatorParameters(bool walking, bool sprinting, bool grounded)
+    {
+        if (animator == null || !animator.gameObject.activeInHierarchy)
+            return;
+
+        animator.SetBool("Walking", walking);
+        animator.SetBool("Sprinting", sprinting);
+        animator.SetBool("Grounded", grounded);
+    }
+
+
+    // hides the player's own local character model from only them
+    private void HideOwnModel()
+    {
+        // only hide the model for the player who is this character
+        if (!IsOwner)
+            return;
+
+        // find all renderers on the player
+        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+
+        foreach (Renderer renderer in renderers)
+        {
+            renderer.enabled = false; // hide the character model
+        }
     }
 }
