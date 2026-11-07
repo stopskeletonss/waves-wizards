@@ -222,6 +222,7 @@ public class StaffFireInput : NetworkBehaviour
             }
         }
         weaponManager.CurrentAmmo.Value--;
+        currentStaff.SetAmmo(weaponManager.CurrentAmmo.Value);
         SendFireResult(shooterClientId, shotId, true);
     }
 

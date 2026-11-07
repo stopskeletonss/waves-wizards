@@ -72,17 +72,14 @@ public class StaffManager : NetworkBehaviour
     [ServerRpc]
     void ReloadStaffServerRpc(ServerRpcParams rpcParams = default)
     {
-        // get the staff manager belonging to the player who requested the reload
-        if (NetworkManager.Singleton == null)
-            return;
-
+        // get the staff belonging to the player who requested the reload
         StaffController staff = GetCurrentStaff();
 
-        if (staff != null)
-        {
-            staff.RefillAmmo();
-            Debug.Log("Reloaded staff: " + staff.gameObject.name);
-        }
+        if (staff == null)
+            return;
+        
+        staff.RefillAmmo(); // reload staff locally
+        CurrentAmmo.Value = staff.ammo; // reload staff globally
     }
 
     // handles scrolling to switch staffs
@@ -176,6 +173,10 @@ public class StaffManager : NetworkBehaviour
     // handles refilling ammo
     public void RefillAmmoForStaff(GameObject staffPrefab)
     {
+        // only the server should modify ammo
+        if (!IsServer || staffPrefab == null)
+            return;
+
         foreach (GameObject staff in staffSlots)
         {
             if (staff != null && staff.name.Contains(staffPrefab.name))
@@ -185,7 +186,11 @@ public class StaffManager : NetworkBehaviour
                 if (controller != null)
                 {
                     controller.RefillAmmo();
-                    Debug.Log("Ammo refilled for staff: " + staff.name);
+
+                    if (staff == staffSlots[currentSlot])
+                    {
+                        CurrentAmmo.Value = controller.ammo;
+                    }
                 }
             }
         }
