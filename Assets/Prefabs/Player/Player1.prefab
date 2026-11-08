@@ -1543,6 +1543,7 @@ GameObject:
   - component: {fileID: 1748211165817995293}
   - component: {fileID: 4551305094108739261}
   - component: {fileID: 661244211286453195}
+  - component: {fileID: 1607666764352122956}
   m_Layer: 0
   m_Name: TeammatePortrait
   m_TagString: Untagged
@@ -1607,6 +1608,22 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1607666764352122956
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4521461061042572378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03941ec6b7d508b4e8e36715a7b81172, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerIcon
+  portraitImage: {fileID: 661244211286453195}
+  fullIcon: {fileID: 21300000, guid: ed9f6c61951819448af5f038b70b0c40, type: 3}
+  medIcon: {fileID: 21300000, guid: c3687d2b77c45294c98f81e81523f367, type: 3}
+  lowIcon: {fileID: 21300000, guid: 096c85b38c030814eab4359e1174a3c0, type: 3}
 --- !u!1 &4629623780086244005
 GameObject:
   m_ObjectHideFlags: 0
@@ -1706,6 +1723,7 @@ GameObject:
   - component: {fileID: 2350356333079390833}
   - component: {fileID: 1371461061475466883}
   - component: {fileID: 7056295224571956144}
+  - component: {fileID: 6402914680315342871}
   m_Layer: 0
   m_Name: TeammatePortrait
   m_TagString: Untagged
@@ -1770,6 +1788,22 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &6402914680315342871
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5013002721220065754}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03941ec6b7d508b4e8e36715a7b81172, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerIcon
+  portraitImage: {fileID: 7056295224571956144}
+  fullIcon: {fileID: 21300000, guid: f2c8aa057d0f19248943cb17531d1619, type: 3}
+  medIcon: {fileID: 21300000, guid: 72151b07a0278ff419b17fd36c2da4b4, type: 3}
+  lowIcon: {fileID: 21300000, guid: 9417e226c77f88649a2a2e5e0fd48df9, type: 3}
 --- !u!1 &5077501906197933637
 GameObject:
   m_ObjectHideFlags: 0
@@ -1934,7 +1968,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 998088517
+  GlobalObjectIdHash: 68615997
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -2065,6 +2099,11 @@ MonoBehaviour:
   staffSlots:
   - {fileID: 0}
   - {fileID: 0}
+  CurrentAmmo:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 30
 --- !u!114 &4194449474406156166
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2469,16 +2508,28 @@ MonoBehaviour:
   activeCharacterIcon: {fileID: 7707606613275759334}
   hexRow: {fileID: 2810349446792098989}
   hexHealthBar: {fileID: 6743533320166850270}
-  hexIcon: {fileID: 2849957143135122279}
+  hexIcon: {fileID: 3165050148443755294}
+  hexFull: {fileID: 21300000, guid: 2f5889c18db553a44a8a361248b1245d, type: 3}
+  hexMed: {fileID: 21300000, guid: d4dfe860b795d4643b64fdbdfb038114, type: 3}
+  hexLow: {fileID: 21300000, guid: ac620fa1150751948ba36564080a6215, type: 3}
   cyrusRow: {fileID: 2089289729481559687}
   cyrusHealthBar: {fileID: 4949535089758321929}
-  cyrusIcon: {fileID: 661244211286453195}
+  cyrusIcon: {fileID: 1607666764352122956}
+  cyrusFull: {fileID: 21300000, guid: ed9f6c61951819448af5f038b70b0c40, type: 3}
+  cyrusMed: {fileID: 21300000, guid: c3687d2b77c45294c98f81e81523f367, type: 3}
+  cyrusLow: {fileID: 21300000, guid: 096c85b38c030814eab4359e1174a3c0, type: 3}
   snickerdoodleRow: {fileID: 3371142894744009162}
   snickerdoodleHealthBar: {fileID: 5300587191676428802}
-  snickerdoodleIcon: {fileID: 7056295224571956144}
+  snickerdoodleIcon: {fileID: 6402914680315342871}
+  snickerdoodleFull: {fileID: 21300000, guid: f2c8aa057d0f19248943cb17531d1619, type: 3}
+  snickerdoodleMed: {fileID: 21300000, guid: 72151b07a0278ff419b17fd36c2da4b4, type: 3}
+  snickerdoodleLow: {fileID: 21300000, guid: 9417e226c77f88649a2a2e5e0fd48df9, type: 3}
   orionRow: {fileID: 149104695039380598}
   orionHealthBar: {fileID: 3225461428439022503}
-  orionIcon: {fileID: 6380220875438082682}
+  orionIcon: {fileID: 1888112344371558214}
+  orionFull: {fileID: 21300000, guid: 8076b47061b8e0e4cbc74929210944d8, type: 3}
+  orionMed: {fileID: 21300000, guid: c6c77dc0e1b39a54eb31986e7138be2e, type: 3}
+  orionLow: {fileID: 21300000, guid: ea207e858ab37fd408fc2324c7b40297, type: 3}
 --- !u!1 &5990860718459378914
 GameObject:
   m_ObjectHideFlags: 0
@@ -2928,6 +2979,7 @@ GameObject:
   - component: {fileID: 4727950235053402868}
   - component: {fileID: 2054413512491559442}
   - component: {fileID: 6380220875438082682}
+  - component: {fileID: 1888112344371558214}
   m_Layer: 0
   m_Name: TeammatePortrait
   m_TagString: Untagged
@@ -2992,6 +3044,22 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1888112344371558214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7679305548657531596}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03941ec6b7d508b4e8e36715a7b81172, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerIcon
+  portraitImage: {fileID: 6380220875438082682}
+  fullIcon: {fileID: 21300000, guid: 8076b47061b8e0e4cbc74929210944d8, type: 3}
+  medIcon: {fileID: 21300000, guid: c6c77dc0e1b39a54eb31986e7138be2e, type: 3}
+  lowIcon: {fileID: 21300000, guid: ea207e858ab37fd408fc2324c7b40297, type: 3}
 --- !u!1 &7783939777633858313
 GameObject:
   m_ObjectHideFlags: 0
@@ -3189,6 +3257,7 @@ GameObject:
   - component: {fileID: 7430276912780440321}
   - component: {fileID: 9032764867940016755}
   - component: {fileID: 2849957143135122279}
+  - component: {fileID: 3165050148443755294}
   m_Layer: 0
   m_Name: TeammatePortrait
   m_TagString: Untagged
@@ -3253,6 +3322,22 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &3165050148443755294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9170571684230938007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03941ec6b7d508b4e8e36715a7b81172, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerIcon
+  portraitImage: {fileID: 2849957143135122279}
+  fullIcon: {fileID: 21300000, guid: 2f5889c18db553a44a8a361248b1245d, type: 3}
+  medIcon: {fileID: 21300000, guid: d4dfe860b795d4643b64fdbdfb038114, type: 3}
+  lowIcon: {fileID: 21300000, guid: ac620fa1150751948ba36564080a6215, type: 3}
 --- !u!1 &9214374651120449592
 GameObject:
   m_ObjectHideFlags: 0

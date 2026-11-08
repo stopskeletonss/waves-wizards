@@ -4,32 +4,36 @@ using UnityEngine.UI;
 
 public class PlayerHealthUI : MonoBehaviour
 {
-    [Header("Active Player ")]
+    [Header("Active Player")]
     public Slider activeHealthBar;
     public Image activeCharacterIcon;
 
     [Header("Hex")]
     public GameObject hexRow;
     public Slider hexHealthBar;
-    public Image hexIcon;
+    public PlayerIcon hexIcon;
+    public Sprite hexFull, hexMed, hexLow;
 
 
     [Header("Cyrus")]
     public GameObject cyrusRow;
     public Slider cyrusHealthBar;
-    public Image cyrusIcon;
+    public PlayerIcon cyrusIcon;
+    public Sprite cyrusFull, cyrusMed, cyrusLow;
 
 
     [Header("Snickerdoodle")]
     public GameObject snickerdoodleRow;
     public Slider snickerdoodleHealthBar;
-    public Image snickerdoodleIcon;
+    public PlayerIcon snickerdoodleIcon;
+    public Sprite snickerdoodleFull, snickerdoodleMed, snickerdoodleLow;
 
 
     [Header("Orion")]
     public GameObject orionRow;
     public Slider orionHealthBar;
-    public Image orionIcon;
+    public PlayerIcon orionIcon;
+    public Sprite orionFull, orionMed, orionLow;
 
     private float refreshTimer = 0f; 
     private const float refreshInterval = 0.5f;
@@ -80,6 +84,9 @@ public class PlayerHealthUI : MonoBehaviour
 
         // update the top-left health bar using the local player's health
         SetHealth(activeHealthBar, localPlayer);
+
+        // initialize all player icons
+        InitializePlayerIcons(players);
 
         // display the icon matching the local player's selected character
         SetActivePlayerIcon(localPlayer.Character.Value);
@@ -140,15 +147,13 @@ public class PlayerHealthUI : MonoBehaviour
         }
     }
 
-
-    private void CopyIcon(Image sourceIcon)
+    // copies icon to the active player's portrait slot
+    private void CopyIcon(PlayerIcon sourceIcon)
     {
-        if (sourceIcon == null || activeCharacterIcon == null)
-        {
-            return;
-        }
+        if (sourceIcon == null || activeCharacterIcon == null || sourceIcon.CurrentSprite == null)
+            return
 
-        activeCharacterIcon.sprite = sourceIcon.sprite;
+        activeCharacterIcon.sprite = sourceIcon.CurrentSprite;
         activeCharacterIcon.enabled = true;
     }
 
@@ -216,5 +221,44 @@ public class PlayerHealthUI : MonoBehaviour
         healthBar.minValue = 0f;
         healthBar.maxValue = player.maxHP;
         healthBar.value = player.CurrentHP.Value;
+    }
+
+
+    private void InitializePlayerIcons(PlayerStatus[] players)
+    {
+        // for each player
+        foreach (PlayerStatus player in players)
+        {
+            // only initialize player icon if the player has spawned
+            if (player == null || !player.IsSpawned)
+                continue;
+
+            switch (player.Character.Value)
+            {
+                // initialize Hex player icon
+                case CharacterType.Hex:
+                    if (hexIcon != null)
+                        hexIcon.Initialize(player, hexFull, hexMed, hexLow);
+                    break;
+                
+                // initialize Cyrus player icon
+                case CharacterType.Cyrus:
+                    if (cyrusIcon != null)
+                        cyrusIcon.Initialize(player, cyrusFull, cyrusMed, cyrusLow);
+                    break;
+
+                // initialize Snickerdoodle player icon
+                case CharacterType.Snickerdoodle:
+                    if (snickerdoodleIcon != null)
+                        snickerdoodleIcon.Initialize(player, snickerdoodleFull, snickerdoodleMed, snickerdoodleLow);
+                    break;
+
+                // initialize Orion player icon
+                case CharacterType.Orion:
+                    if (orionIcon != null)
+                        orionIcon.Initialize(player, orionFull, orionMed, orionLow);
+                    break;
+            }
+        }
     }
 }
