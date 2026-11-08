@@ -9,12 +9,18 @@ public class PlayerIcon : MonoBehaviour
     [SerializeField] private Sprite medIcon;
     [SerializeField] private Sprite lowIcon;
 
+    [SerializeField] private Image deathOverlay;
+
     private PlayerStatus playerStatus;
 
     // allows PlayerHealthUI to access the currently displayed icon
     public Sprite CurrentSprite => portraitImage != null
         ? portraitImage.sprite
         : null;
+
+    // allows PlayerHealthUI to know whether or not the active player is dead
+    public bool IsDead => playerStatus != null &&
+        playerStatus.CurrentHP.Value <= 0f;
 
     public void Initialize(PlayerStatus status, Sprite full, Sprite med, Sprite low)
     {
@@ -67,7 +73,9 @@ public class PlayerIcon : MonoBehaviour
         if (portraitImage == null)
             return;
 
-        Debug.Log("Player HP changed: " + oldHP + " -> " + newHP);
+        // enable red death overlay when player reaches 0 HP
+        if (deathOverlay != null)
+            deathOverlay.enabled = newHP <= 0f;
 
         if (newHP > 66f)
             portraitImage.sprite = fullIcon;

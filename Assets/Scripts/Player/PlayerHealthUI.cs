@@ -7,6 +7,7 @@ public class PlayerHealthUI : MonoBehaviour
     [Header("Active Player")]
     public Slider activeHealthBar;
     public Image activeCharacterIcon;
+    public Image activeDeathOverlay;
 
     [Header("Hex")]
     public GameObject hexRow;
@@ -150,8 +151,13 @@ public class PlayerHealthUI : MonoBehaviour
     // copies icon to the active player's portrait slot
     private void CopyIcon(PlayerIcon sourceIcon)
     {
+        // copy character portrait
         if (sourceIcon == null || activeCharacterIcon == null || sourceIcon.CurrentSprite == null)
-            return
+            return;
+
+        // copy death state
+        if (activeDeathOverlay != null)
+            activeDeathOverlay.enabled = sourceIcon.IsDead;
 
         activeCharacterIcon.sprite = sourceIcon.CurrentSprite;
         activeCharacterIcon.enabled = true;
