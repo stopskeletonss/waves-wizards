@@ -519,16 +519,10 @@ Texture convention across the models: each model ships alongside `*_Color.png`, 
 
 ## Known Issues / WIP
 
-1. **Two player controllers, split responsibilities.** `PlayerController` (legacy, non-networked) owns points/HUD and is what `StaffShop` talks to. `FirstPersonController` (networked) is what's actually on the prefab. Points need to migrate onto `PlayerStatus` for the shop to work in multiplayer.
-2. **`StaffShop` isn't multiplayer-ready.** It polls every frame using `FindGameObjectWithTag` plus bounds containment rather than `OnTriggerEnter`/`Exit`, assumes a single player tagged `Player`, and spends points through `PlayerController`.
-3. **Round number and points aren't replicated.** Player HP, enemy HP, characters, and animations now use `NetworkVariable`s, but `RoundSystem`'s round count and the points economy are still machine-local.
-4. **Staff switching isn't replicated.** Each peer spawns the starter staff locally, but slot switches and shop purchases only happen on the owner, so other players won't see a staff change. The server's ammo count and the owner's mana UI can also drift apart.
-5. **Characters are auto-assigned.** `CharacterAssignmentManager` hands out characters in order. There's no character select yet, and a fifth player gets no character.
-6. **Connection UI is a temporary `OnGUI` overlay.** It should move into the main menu's lobby page. Relay also requires the project to be linked to Unity Cloud.
-7. **`EnemyTest.prefab` (skeleton) has no `NetworkTransform`.** Only the Sentinel (`EnemyTest 2`) replicates movement.
-8. **Stale Build Settings entry.** `Assets/Scenes/NetworkTavern.unity` is listed (disabled) but doesn't exist.
-9. **`EnemySpawnerTest` counts in frames, not seconds** (`spawnTimer++` in `Update`), so its spawn rate is framerate-dependent. Superseded by `RoundSystem`.
-10. **`StaffController.Fire()` is dead code** now that `StaffFireInput` handles firing.
-11. **Naming inconsistencies to be aware of:** `StaffStore.cs` declares class `StaffShop`. The player prefab child is named `StaffFIrePoint`.
-12. **Leftover folders:** `Extras/TutorialInfo/` (Unity template) and `_Recovery/` (auto-recovery scenes) can be deleted.
-13. **Input System package is installed but unused**. All gameplay reads legacy `Input.GetAxis` / `Input.GetKey`. Migrating would also make controller support (which `FirstPersonController` was written with in mind) straightforward.
+1. **Two player controllers, split responsibilities.** `PlayerController` (legacy, non-networked) owns health/points/HUD and is what `StaffShop` talks to. `FirstPersonController` (networked) is what's actually on the prefab. Points and health need to migrate onto `PlayerStatus` for the shop to work in multiplayer.
+2. **`StaffShop` polls every frame** using `FindGameObjectWithTag` plus bounds containment rather than using `OnTriggerEnter`/`Exit`. It also assumes a single player tagged `Player`, which breaks in multiplayer.
+3. **Duplicate fountain assets** exist at both `Models/OutDoors/Fountain/` and `Models/ModularAssets/OutDoors/Foutine/` (note the misspelling).
+4. **Naming inconsistencies to be aware of:** `StaffStore.cs` declares class `StaffShop`. The player prefab child is named `StaffFIrePoint`. `Assets/FinishedAttack.cs` sits outside `Scripts/`. The folder `Networking Stuff/` contains a space, which is awkward in shell paths.
+5. **`Extras/TutorialInfo/`** is a leftover Unity template and can be deleted.
+6. **Input System package is installed but unused**. All gameplay reads legacy `Input.GetAxis` / `Input.GetKey`. Migrating would also make controller support (which `FirstPersonController` was written with in mind) straightforward.
+7. **Round number and points aren't replicated.** Player HP, enemy HP, characters, and animations now use `NetworkVariable`s, but `RoundSystem`'s round count and the points economy are still machine-local.

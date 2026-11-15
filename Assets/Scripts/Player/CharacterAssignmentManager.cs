@@ -60,7 +60,7 @@ public class CharacterAssignmentManager : NetworkBehaviour
         // stop listening for connects/diconnects when the server manager is removed
         if (IsServer && NetworkManager != null)
         {
-            NetworkManager.OnClientConnectedCallback += OnClientConnected;
+            NetworkManager.OnClientConnectedCallback -= OnClientConnected;
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnected;
         }
 
