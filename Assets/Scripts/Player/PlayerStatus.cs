@@ -1,31 +1,95 @@
 using Unity.Netcode;
 using UnityEngine;
 
-//Not sure if this is neededbut we "probably" won't need multiple status' on a player game object
+// only allow one PlayerStatus component per GameObject
 [DisallowMultipleComponent]
 
 public class PlayerStatus : NetworkBehaviour
 {
-    [SerializeField] private float currentHP;
-    [SerializeField] private float maxHP;
-    //probably other values (ammo, buffs, debuffs)
+    [Header("Health")]
+    [SerializeField] public float maxHP = 100f;
+
+    public NetworkVariable<float> CurrentHP =
+        new NetworkVariable<float>(
+            100f, 
+            NetworkVariableReadPermission.Everyone, 
+            NetworkVariableWritePermission.Server
+        );
+
+    [Header("Character")]
+    public NetworkVariable<CharacterType> Character =
+        new NetworkVariable<CharacterType>(
+            CharacterType.Unassigned,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+        );
+
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-        currentHP = maxHP;
+
+        if (IsServer)
+        {
+            CurrentHP.Value = maxHP; // initialize health to max
+        }
+
+        // server's character manager assigns a character to this client
+        if (IsServer && CharacterAssignmentManager.Instance != null)
+        {
+            CharacterAssignmentManager.Instance.AssignCharacter(OwnerClientId);
+        }
+
+        // event listeners for character assignment and health changes
+        Character.OnValueChanged += OnCharacterChanged;
+        CurrentHP.OnValueChanged += OnHealthChanged;
+
+        // debugging
+        Debug.Log("Player spawned.\nCharacter: " + Character.Value + "\nHealth: " + CurrentHP.Value);
     }
 
-    // Update is called once per frame
-    void Update()
+
+    public override void OnNetworkDespawn()
     {
-        
+        // remove revent listeners if the player object is removed (player disconnected)
+        Character.OnValueChanged -= OnCharacterChanged;
+        CurrentHP.OnValueChanged -= OnHealthChanged;
+
+        base.OnNetworkDespawn();
+
     }
 
-    public void takeDamage(float damageAmount)
+
+    public void TakeDamage(float damageAmount)
     {
-        Debug.Log("Applying Damage!");
-        //applies damage from currentHP
-        currentHP -= damageAmount;
-        Debug.Log("HP: " + currentHP);
+        ApplyDamageServerRpc(damageAmount);
+    }
+
+    [ServerRpc(RequireOwnership = false)] // allows other objects (enemies to request damage to this player's object)
+    private void ApplyDamageServerRpc(float damageAmount)
+    {
+        // apply damage and prevent health from dropping below 0
+        CurrentHP.Value = Mathf.Max(0f, CurrentHP.Value - damageAmount);
+
+        // debugging
+        Debug.Log(Character.Value + " took " + damageAmount + " damage. HP: " + CurrentHP.Value);
+    }
+
+
+    // called when the client's character assignment changes
+    // TODO: switch player's 3D model and UI
+    private void OnCharacterChanged(CharacterType prevCharacter, CharacterType newCharacter)
+    {
+        // debugging
+        Debug.Log("Character changed from " + prevCharacter + " to " + newCharacter);
+    }
+
+    
+    // called when the client's health changes
+    // TODO: change health bar colour and character portrait to reflect health state
+    private void OnHealthChanged(float prevHP, float newHP)
+    {
+        // debugging
+        Debug.Log(Character.Value + " health changed from " + prevHP + " to " + newHP);
     }
 }

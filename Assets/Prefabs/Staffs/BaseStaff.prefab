@@ -106,7 +106,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   projectilePrefab: {fileID: 1190583387234657133, guid: 03059442fc44907468c66c5056750a04, type: 3}
-  firePoint: {fileID: 0}
+  firePoint: {fileID: 3528395048460332994}
   fireForce: 20
   upwardForce: 0
   ammo: 30
