@@ -1,13 +1,16 @@
 using UnityEngine;
+using System.Collections.Generic;
 using TMPro;
 
 public class StaffController : MonoBehaviour
 {
     [Header("Firing Settings")]
-    public GameObject projectilePrefab;
-    public Transform firePoint;                // The muzzle / spawn point on the staff
-    public float fireForce = 20f;              // Speed applied along aim direction
-    public float upwardForce = 0f;             // Optional additional upward component (relative to camera)
+    public List<GameObject> projectilePrefabs = new List<GameObject>();
+    public List<GameObject> projectileLCopies = new List<GameObject>();
+
+    public Transform firePoint;
+    public float fireForce = 20f;
+    public float upwardForce = 0f;
     public int ammo = 30;
 
     private int maxAmmo;
@@ -16,10 +19,10 @@ public class StaffController : MonoBehaviour
     public TMP_Text manaText;
 
     [Header("Follow Lag Settings")]
-    public float positionLag = 12f;            // Larger = snappier; used with exponential smoothing
-    public float rotationLag = 12f;            // Larger = snappier
+    public float positionLag = 12f;
+    public float rotationLag = 12f;
 
-    private Transform holdPoint;               // Where the staff should follow (cached original parent)
+    private Transform holdPoint;
 
     void Awake()
     {
@@ -33,16 +36,22 @@ public class StaffController : MonoBehaviour
             firePoint = transform.Find("ProjectileOrigin");
 
         if (firePoint == null)
-            Debug.LogWarning($"[{name}] No ProjectileOrigin found. Assign a child named 'StaffFirePoint' or set the ProjectileOrigin in inspector.");
+            Debug.LogWarning($"[{name}] No ProjectileOrigin found.");
 
-        // Cache parent as holdPoint (WeaponHoldPoint) then unparent so we can smooth-follow it
+        // Cache parent as holdPoint
         if (transform.parent != null)
         {
             holdPoint = transform.parent;
         }
         else
         {
-            Debug.LogWarning($"[{name}] Staff has no parent to follow. Make sure the staff prefab is parented to the weapon hold point in the hierarchy before runtime.");
+            Debug.LogWarning($"[{name}] Staff has no parent to follow.");
+        }
+
+        // Check projectile lists
+        if (projectilePrefabs.Count != projectileLCopies.Count)
+        {
+            Debug.LogWarning($"[{name}] Projectile prefab and local copy lists have different sizes!");
         }
 
         UpdateManaUI();
@@ -52,15 +61,32 @@ public class StaffController : MonoBehaviour
     {
         if (holdPoint == null) return;
 
-        // Smooth position follow (exponential smoothing)
         float posT = 1f - Mathf.Exp(-positionLag * Time.deltaTime);
         transform.position = Vector3.Lerp(transform.position, holdPoint.position, posT);
 
-        // Smooth rotation follow (slerp)
         float rotT = 1f - Mathf.Exp(-rotationLag * Time.deltaTime);
         transform.rotation = Quaternion.Slerp(transform.rotation, holdPoint.rotation, rotT);
     }
 
+    // Returns a random projectile and its matching local copy
+    public void GetRandomProjectile(out GameObject projectile, out GameObject localCopy)
+    {
+        projectile = null;
+        localCopy = null;
+
+        if (projectilePrefabs.Count == 0 || projectileLCopies.Count == 0)
+        {
+            Debug.LogWarning($"[{name}] No projectiles assigned!");
+            return;
+        }
+
+        int count = Mathf.Min(projectilePrefabs.Count, projectileLCopies.Count);
+
+        int randomIndex = Random.Range(0, count);
+
+        projectile = projectilePrefabs[randomIndex];
+        localCopy = projectileLCopies[randomIndex];
+    }
 
     public void RefillAmmo()
     {
@@ -70,7 +96,6 @@ public class StaffController : MonoBehaviour
 
     public void SetAmmo(int newAmmo)
     {
-        // Ensure ammo can't go below 0 or above max
         ammo = Mathf.Clamp(newAmmo, 0, maxAmmo);
         UpdateManaUI();
     }
@@ -81,7 +106,6 @@ public class StaffController : MonoBehaviour
             manaText.text = $"{ammo} / {maxAmmo}";
     }
 
-    // Helper getters (optional)
     public int GetAmmo() => ammo;
     public int GetMaxAmmo() => maxAmmo;
 }

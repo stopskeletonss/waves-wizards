@@ -105,7 +105,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a0d67b5407fbaa4b96cc8dd6b92a102, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  projectilePrefab: {fileID: 1190583387234657133, guid: 03059442fc44907468c66c5056750a04, type: 3}
+  projectilePrefabs:
+  - {fileID: 1190583387234657133, guid: 03059442fc44907468c66c5056750a04, type: 3}
+  projectileLCopies:
+  - {fileID: 1190583387234657133, guid: f26ebe5b87f37374a8998f738bb70787, type: 3}
   firePoint: {fileID: 3528395048460332994}
   fireForce: 20
   upwardForce: 0
@@ -113,10 +116,6 @@ MonoBehaviour:
   manaText: {fileID: 0}
   positionLag: 100
   rotationLag: 20
-  aimMaxDistance: 1000
-  aimLayerMask:
-    serializedVersion: 2
-    m_Bits: 59
 --- !u!1 &4759750530538131981
 GameObject:
   m_ObjectHideFlags: 0

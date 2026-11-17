@@ -18,7 +18,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2994119891324791575
 Transform:
   m_ObjectHideFlags: 0
@@ -105,7 +105,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a0d67b5407fbaa4b96cc8dd6b92a102, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  projectilePrefab: {fileID: 1190583387234657133, guid: 3ce93cc0a0dd34844af0b430bf3eec77, type: 3}
+  projectilePrefabs:
+  - {fileID: 1190583387234657133, guid: 3ce93cc0a0dd34844af0b430bf3eec77, type: 3}
+  - {fileID: 1190583387234657133, guid: aee55a67c554515498cf540325578aad, type: 3}
+  - {fileID: 1190583387234657133, guid: 1ccbd645aff63c54c9734eae91628401, type: 3}
+  - {fileID: 1190583387234657133, guid: 33b94e39f0c641f4c8fcc09898d67f3c, type: 3}
+  projectileLCopies:
+  - {fileID: 1190583387234657133, guid: 026560cd12ff1b147bc3db765848f692, type: 3}
+  - {fileID: 1190583387234657133, guid: bbbd2dfad94b6ae469bb598a2eb95f8f, type: 3}
+  - {fileID: 1190583387234657133, guid: 9f5960f4a519bb547b4017266972e5b7, type: 3}
+  - {fileID: 1190583387234657133, guid: 32ef63ae0dbd79a4bbc3cf71f067ebaa, type: 3}
   firePoint: {fileID: 0}
   fireForce: 20
   upwardForce: 0

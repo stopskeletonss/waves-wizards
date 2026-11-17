@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 3372489235796247337}
   - component: {fileID: -1103011901216460801}
   m_Layer: 0
-  m_Name: PredictedProjectile1
+  m_Name: PTempProj
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
