@@ -18,7 +18,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2994119891324791575
 Transform:
   m_ObjectHideFlags: 0
@@ -113,10 +113,6 @@ MonoBehaviour:
   manaText: {fileID: 0}
   positionLag: 100
   rotationLag: 20
-  aimMaxDistance: 1000
-  aimLayerMask:
-    serializedVersion: 2
-    m_Bits: 59
 --- !u!1 &4759750530538131981
 GameObject:
   m_ObjectHideFlags: 0
