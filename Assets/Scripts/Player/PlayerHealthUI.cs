@@ -40,6 +40,13 @@ public class PlayerHealthUI : MonoBehaviour
     private const float refreshInterval = 0.5f;
 
 
+    [Header("Health Bar Colours")]
+    public Color fullHealthCol = Color.green;
+    public Color twoThirdsHealthCol = Color.yellow;
+    public Color halfHealthCol = new Color(1f, 0.5f, 0f); // orange
+    public Color oneThirdHealthCol = Color.red;
+
+
     private void Update()
     {
         refreshTimer -= Time.deltaTime;
@@ -227,6 +234,19 @@ public class PlayerHealthUI : MonoBehaviour
         healthBar.minValue = 0f;
         healthBar.maxValue = player.maxHP;
         healthBar.value = player.CurrentHP.Value;
+
+        float healthPerc = player.CurrentHP.Value / player.maxHP; // calculate the percentage of health left
+        Image fillImg = healthBar.fillRect.GetComponent<Image>(); // get the fill image of the health bar
+
+        // change the health bar colour based on the remaining health left
+        if (healthPerc > 0.66f)
+            fillImg.color = fullHealthCol;
+        else if (healthPerc > 0.50f)
+            fillImg.color = twoThirdsHealthCol;
+        else if (healthPerc > 0.33f)
+            fillImg.color = halfHealthCol;
+        else
+            fillImg.color = oneThirdHealthCol;
     }
 
 

@@ -34,9 +34,9 @@ RectTransform:
   - {fileID: 4727950235053402868}
   m_Father: {fileID: 1240446438215225864}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 50, y: -50}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &353119513727909165
@@ -699,9 +699,9 @@ RectTransform:
   - {fileID: 1748211165817995293}
   m_Father: {fileID: 1240446438215225864}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 195, y: -50}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2151797173665755764
@@ -1131,9 +1131,9 @@ RectTransform:
   - {fileID: 7430276912780440321}
   m_Father: {fileID: 1240446438215225864}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 340, y: -50}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &3371142894744009162
@@ -1170,9 +1170,9 @@ RectTransform:
   - {fileID: 2350356333079390833}
   m_Father: {fileID: 1240446438215225864}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 485, y: -50}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &3399535186045012352
@@ -2686,6 +2686,10 @@ MonoBehaviour:
   orionFull: {fileID: 21300000, guid: 8076b47061b8e0e4cbc74929210944d8, type: 3}
   orionMed: {fileID: 21300000, guid: c6c77dc0e1b39a54eb31986e7138be2e, type: 3}
   orionLow: {fileID: 21300000, guid: ea207e858ab37fd408fc2324c7b40297, type: 3}
+  fullHealthCol: {r: 0, g: 1, b: 0, a: 1}
+  twoThirdsHealthCol: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  halfHealthCol: {r: 1, g: 0.5, b: 0, a: 1}
+  oneThirdHealthCol: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &5990860718459378914
 GameObject:
   m_ObjectHideFlags: 0
