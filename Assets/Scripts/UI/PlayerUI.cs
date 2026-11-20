@@ -2,12 +2,13 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerHealthUI : MonoBehaviour
+public class PlayerUI : MonoBehaviour
 {
     [Header("Active Player")]
     public Slider activeHealthBar;
     public Image activeCharacterIcon;
     public Image activeDeathOverlay;
+    [SerializeField] private CustomRadialFill ammoFill;
 
     [Header("Hex")]
     public GameObject hexRow;
@@ -36,15 +37,16 @@ public class PlayerHealthUI : MonoBehaviour
     public PlayerIcon orionIcon;
     public Sprite orionFull, orionMed, orionLow;
 
-    private float refreshTimer = 0f; 
-    private const float refreshInterval = 0.5f;
-
 
     [Header("Health Bar Colours")]
     public Color fullHealthCol = Color.green;
     public Color twoThirdsHealthCol = Color.yellow;
     public Color halfHealthCol = new Color(1f, 0.5f, 0f); // orange
     public Color oneThirdHealthCol = Color.red;
+
+
+    private float refreshTimer = 0f;
+    private const float refreshInterval = 0.1f;
 
 
     private void Update()
@@ -90,8 +92,15 @@ public class PlayerHealthUI : MonoBehaviour
             return;
         }
 
+        // get the local player's staff manager for the ammo count
+        StaffManager localWeaponManager =
+            localPlayer.GetComponent<StaffManager>();
+
         // update the top-left health bar using the local player's health
         SetHealth(activeHealthBar, localPlayer);
+
+        // update the ammo bar for the local player
+        SetAmmo(localPlayer, localWeaponManager);
 
         // initialize all player icons
         InitializePlayerIcons(players);
@@ -266,7 +275,7 @@ public class PlayerHealthUI : MonoBehaviour
                     if (hexIcon != null)
                         hexIcon.Initialize(player, hexFull, hexMed, hexLow);
                     break;
-                
+
                 // initialize Cyrus player icon
                 case CharacterType.Cyrus:
                     if (cyrusIcon != null)
@@ -286,5 +295,20 @@ public class PlayerHealthUI : MonoBehaviour
                     break;
             }
         }
+    }
+
+
+    private void SetAmmo(PlayerStatus player, StaffManager weaponManager)
+    {
+        if (ammoFill == null || player == null || weaponManager == null)
+        {
+            return;
+        }
+
+        // calculate the percentage of ammo remaining
+        float ammoPerc = (float)weaponManager.CurrentAmmo.Value / weaponManager.maxAmmo;
+
+        // update the radial ammo indicator
+        ammoFill.SetProgress(ammoPerc);
     }
 }
