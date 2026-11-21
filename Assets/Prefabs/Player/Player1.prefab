@@ -34,9 +34,9 @@ RectTransform:
   - {fileID: 4727950235053402868}
   m_Father: {fileID: 1240446438215225864}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 50, y: -50}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &353119513727909165
@@ -938,9 +938,9 @@ RectTransform:
   - {fileID: 1748211165817995293}
   m_Father: {fileID: 1240446438215225864}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 195, y: -50}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2151797173665755764
@@ -1445,9 +1445,9 @@ RectTransform:
   - {fileID: 7430276912780440321}
   m_Father: {fileID: 1240446438215225864}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 340, y: -50}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &3068475531241839774
@@ -1573,9 +1573,9 @@ RectTransform:
   - {fileID: 2350356333079390833}
   m_Father: {fileID: 1240446438215225864}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 485, y: -50}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &3399535186045012352
@@ -3630,7 +3630,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 2100000, guid: c949bd4c2b50882498663c9a0a6d09e4, type: 2}
-  m_Color: {r: 0.32686803, g: 0.045651276, b: 0.57412386, a: 1}
+  m_Color: {r: 0.52985096, g: 0, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3662,6 +3662,8 @@ MonoBehaviour:
   fillImage: {fileID: 7254356906976240393}
   startAngle: -35
   endAngle: 255
+  segmentGap: 3
+  segmentColor: {r: 0.04705883, g: 0, b: 0.12941177, a: 1}
 --- !u!1 &7679305548657531596
 GameObject:
   m_ObjectHideFlags: 0

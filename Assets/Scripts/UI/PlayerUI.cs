@@ -305,6 +305,9 @@ public class PlayerUI : MonoBehaviour
             return;
         }
 
+        // set the number of segments to match the maximum ammo
+        ammoFill.SetSegmentCount(weaponManager.maxAmmo);
+
         // calculate the percentage of ammo remaining
         float ammoPerc = (float)weaponManager.CurrentAmmo.Value / weaponManager.maxAmmo;
 
