@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class PlayerUI : MonoBehaviour
 {
@@ -45,6 +46,18 @@ public class PlayerUI : MonoBehaviour
     public Color oneThirdHealthCol = Color.red;
 
 
+    [Header("Staff Elements")]
+    public Image primaryElementImage;
+    public Image[] radialElementImages;
+    public Sprite basicStaffIcon;
+    public Sprite fireIcon;
+    public Sprite iceIcon;
+    public Sprite windIcon;
+    public Sprite poisonIcon;
+    public Sprite lightIcon;
+    public Sprite darkIcon;
+
+
     private float refreshTimer = 0f;
     private const float refreshInterval = 0.1f;
 
@@ -67,9 +80,7 @@ public class PlayerUI : MonoBehaviour
     private void UpdateHUD()
     {
         // find all PlayerStatus components because they contain the player's health and character
-        PlayerStatus[] players =
-            FindObjectsByType<PlayerStatus>(FindObjectsSortMode.None);
-
+        PlayerStatus[] players = FindObjectsByType<PlayerStatus>(FindObjectsSortMode.None);
         PlayerStatus localPlayer = null;
 
         // find the player controlled by this client
@@ -92,15 +103,20 @@ public class PlayerUI : MonoBehaviour
             return;
         }
 
-        // get the local player's staff manager for the ammo count
-        StaffManager localWeaponManager =
-            localPlayer.GetComponent<StaffManager>();
+        // get the local player's staff manager
+        StaffManager localWeaponManager = localPlayer.GetComponent<StaffManager>();
+
+        // get the local player's equipped staff
+        StaffController currentStaff = localWeaponManager.GetCurrentStaff();
 
         // update the top-left health bar using the local player's health
         SetHealth(activeHealthBar, localPlayer);
 
         // update the ammo bar for the local player
         SetAmmo(localPlayer, localWeaponManager);
+
+        // update the elements on the player's equipped staff
+        UpdateElements(currentStaff);
 
         // initialize all player icons
         InitializePlayerIcons(players);
@@ -313,5 +329,78 @@ public class PlayerUI : MonoBehaviour
 
         // update the radial ammo indicator
         ammoFill.SetProgress(ammoPerc);
+    }
+
+
+    // gets the sprite based on the staff element
+    private Sprite GetElementSprite(StaffElement element)
+    {
+        switch (element)
+        {
+            case StaffElement.Fire:
+                return fireIcon;
+
+            case StaffElement.Ice:
+                return iceIcon;
+
+            case StaffElement.Wind:
+                return windIcon;
+
+            case StaffElement.Poison:
+                return poisonIcon;
+
+            case StaffElement.Light:
+                return lightIcon;
+
+            case StaffElement.Dark:
+                return darkIcon;
+
+            default:
+                return null;
+        }
+    }
+
+
+    // updates the element UI when there is a change to the elements on the staff
+    private void UpdateElements(StaffController staff)
+    {
+        List<StaffElement> elements = staff != null
+            ? staff.elements
+            : null;
+
+        int elementCount = elements != null ? elements.Count : 0;
+
+        // display the basic icon if there are no elements
+        if (elementCount == 0)
+        {
+            primaryElementImage.sprite = basicStaffIcon;
+            primaryElementImage.enabled = basicStaffIcon != null;
+        }
+        else
+        {
+            // display the first element in the center
+            primaryElementImage.sprite = GetElementSprite(elements[0]);
+            primaryElementImage.enabled = primaryElementImage.sprite != null;
+        }
+
+        // display remaining elements in the predefined radial positions
+        for (int i = 0; i < radialElementImages.Length; i++)
+        {
+            Image icon = radialElementImages[i];
+
+            if (icon == null)
+                continue;
+
+            // hide unused slots
+            if (i + 1 >= elementCount)
+            {
+                icon.enabled = false;
+                continue;
+            }
+
+            // display the next element
+            icon.sprite = GetElementSprite(elements[i + 1]);
+            icon.enabled = icon.sprite != null;
+        }
     }
 }
