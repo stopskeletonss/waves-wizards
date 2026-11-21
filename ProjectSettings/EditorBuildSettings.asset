@@ -11,7 +11,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/NetworkTest.unity
     guid: 23dda190070d3824688123c5c8946792
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/NetworkTavern.unity
     guid: b10e77fc403316e48a859bdaaee4349e
   m_configObjects:

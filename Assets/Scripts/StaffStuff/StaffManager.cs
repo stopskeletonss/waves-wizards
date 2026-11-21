@@ -13,6 +13,8 @@ public class StaffManager : NetworkBehaviour
     // notifies StaffFireInput when the equipped staff changes
     public event Action<GameObject> onStaffEquipped;
 
+    [SerializeField] public int maxAmmo = 30;
+
     // ammo count
     public NetworkVariable<int> CurrentAmmo = new NetworkVariable<int>(
     30,
@@ -24,6 +26,11 @@ public class StaffManager : NetworkBehaviour
     {
         if (weaponHoldPoint == null)
             return;
+
+        if (IsServer)
+        {
+            CurrentAmmo.Value = maxAmmo; // initialize ammo to max
+        }
 
         // equip the starter (base) staff in slot 0 if there is no staff already in slot 0
         if (staffSlots[0] == null && starterStaffPrefab != null)
