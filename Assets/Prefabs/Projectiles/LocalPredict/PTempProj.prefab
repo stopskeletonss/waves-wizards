@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 823471363218998748}
   - component: {fileID: 3372489235796247337}
   - component: {fileID: -1103011901216460801}
+  - component: {fileID: -5092149436654261278}
+  - component: {fileID: 1262227541176002883}
   m_Layer: 0
   m_Name: PTempProj
   m_TagString: Untagged
@@ -118,3 +120,35 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &-5092149436654261278
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1190583387234657133}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e065afc967adb6342a019258b441b7a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StaffScale
+  startScale: 0.05
+  scaleDuration: 0.25
+--- !u!114 &1262227541176002883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1190583387234657133}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6378cc30ceffa7b4ebd77b1461ce5432, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectileSpinning
+  spinX: 0
+  spinY: 1
+  spinZ: 0
+  speedX: 180
+  speedY: 180
+  speedZ: 180
