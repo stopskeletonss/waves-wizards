@@ -110,13 +110,10 @@ MonoBehaviour:
   fireForce: 20
   upwardForce: 0
   ammo: 30
-  manaText: {fileID: 0}
+  elements: 
+  staffIcon: {fileID: 21300000, guid: a6525a6124c71c1488545888063c0e4f, type: 3}
   positionLag: 100
   rotationLag: 20
-  aimMaxDistance: 1000
-  aimLayerMask:
-    serializedVersion: 2
-    m_Bits: 59
 --- !u!1 &4759750530538131981
 GameObject:
   m_ObjectHideFlags: 0
