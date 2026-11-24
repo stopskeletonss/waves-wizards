@@ -28,7 +28,7 @@ public class StaffController : MonoBehaviour
     [SerializeField] public List<StaffElement> elements = new List<StaffElement>();
 
     [Header("UI")]
-    public TMP_Text manaText;
+    public Sprite staffIcon;
 
     [Header("Follow Lag Settings")]
     public float positionLag = 12f;            // Larger = snappier; used with exponential smoothing

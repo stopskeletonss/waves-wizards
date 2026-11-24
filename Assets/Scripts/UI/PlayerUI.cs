@@ -10,6 +10,7 @@ public class PlayerUI : MonoBehaviour
     public Image activeCharacterIcon;
     public Image activeDeathOverlay;
     [SerializeField] private CustomRadialFill ammoFill;
+    public Image staffIcon;
 
     [Header("Hex")]
     public GameObject hexRow;
@@ -117,6 +118,9 @@ public class PlayerUI : MonoBehaviour
 
         // update the elements on the player's equipped staff
         UpdateElements(currentStaff);
+
+        // update the icon to the current staff
+        UpdateStaffIcon(currentStaff);
 
         // initialize all player icons
         InitializePlayerIcons(players);
@@ -402,5 +406,19 @@ public class PlayerUI : MonoBehaviour
             icon.sprite = GetElementSprite(elements[i + 1]);
             icon.enabled = icon.sprite != null;
         }
+    }
+
+
+    // updates the staff UI icon when the player switches staffs
+    private void UpdateStaffIcon(StaffController staff)
+    {
+        if (staff == null || staff.staffIcon == null)
+        {
+            staffIcon.enabled = false;
+            return;
+        }
+
+        staffIcon.sprite = staff.staffIcon;
+        staffIcon.enabled = true;
     }
 }
